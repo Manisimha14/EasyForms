@@ -1,0 +1,1786 @@
+openapi: '3.1.0'
+info:
+  title: Easy Forms API
+  description: REST API for form creation and response collection
+  version: 1.0.0
+  license:
+    name: MIT
+    identifier: MIT
+  contact:
+    name: Easy Forms
+servers:
+  - url: /api/v1
+    description: Current server
+  - url: http://localhost:8080/api/v1
+    description: Local development
+  - url: https://easy-forms.onrender.com/api/v1
+    description: Production
+
+paths:
+  /health:
+    get:
+      summary: Health check
+      description: Returns 200 as long as the process is up
+      operationId: getHealth
+      tags: [Health]
+      security: []
+      responses:
+        '200':
+          description: Service is running
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      status:
+                        type: string
+                        example: ok
+                      version:
+                        type: string
+                        example: local
+                      uptimeSeconds:
+                        type: integer
+                        example: 3600
+
+  /health/ready:
+    get:
+      summary: Readiness check
+      description: Returns 200 only when the Mongoose connection is ready and a ping succeeds
+      operationId: getHealthReady
+      tags: [Health]
+      security: []
+      responses:
+        '200':
+          description: Database is connected and responsive
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      status:
+                        type: string
+                        example: ready
+                      version:
+                        type: string
+                        example: local
+                      uptimeSeconds:
+                        type: integer
+                        example: 3600
+        '503':
+          description: Database is not ready
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/register:
+    post:
+      summary: Register a new user
+      description: Creates a user account and returns JWT access and refresh tokens.
+      operationId: registerUser
+      tags: [Auth]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: user@example.com
+                password:
+                  type: string
+                  format: password
+                  example: StrongPassword123
+                name:
+                  type: string
+                  example: Jane Doe
+      responses:
+        '201':
+          description: Account created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthTokenResponse'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Email already registered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/login:
+    post:
+      summary: Log in to account
+      description: Verifies credentials and returns token pair.
+      operationId: loginUser
+      tags: [Auth]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: user@example.com
+                password:
+                  type: string
+                  format: password
+                  example: StrongPassword123
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthTokenResponse'
+        '401':
+          description: Invalid email or password
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/refresh:
+    post:
+      summary: Refresh authentication tokens
+      description: Exchanges a valid refresh token for a new token pair and revokes the old one.
+      operationId: refreshToken
+      tags: [Auth]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refreshToken]
+              properties:
+                refreshToken:
+                  type: string
+      responses:
+        '200':
+          description: Tokens refreshed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthTokenResponse'
+        '401':
+          description: Invalid or expired refresh token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/logout:
+    post:
+      summary: Log out user
+      description: Revokes the specified refresh token.
+      operationId: logoutUser
+      tags: [Auth]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refreshToken]
+              properties:
+                refreshToken:
+                  type: string
+      responses:
+        '204':
+          description: Logged out successfully
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/me:
+    get:
+      summary: Get current user profile
+      description: Returns information about the authenticated user.
+      operationId: getMe
+      tags: [Auth]
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: User profile
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/UserProfile'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    patch:
+      summary: Update user profile
+      description: Updates the authenticated user's name.
+      operationId: updateMe
+      tags: [Auth]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name:
+                  type: string
+                  example: Jane Smith
+      responses:
+        '200':
+          description: Profile updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/UserProfile'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    delete:
+      summary: Delete account
+      description: Permanently deletes the account and all associated forms, responses, and tokens.
+      operationId: deleteAccount
+      tags: [Auth]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [password]
+              properties:
+                password:
+                  type: string
+      responses:
+        '204':
+          description: Account deleted successfully
+        '401':
+          description: Incorrect password
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/change-password:
+    post:
+      summary: Change password
+      description: Updates password and revokes all active refresh tokens.
+      operationId: changePassword
+      tags: [Auth]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [currentPassword, newPassword]
+              properties:
+                currentPassword:
+                  type: string
+                newPassword:
+                  type: string
+      responses:
+        '200':
+          description: Password updated, new token pair issued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthTokenResponse'
+        '401':
+          description: Current password is incorrect
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /forms:
+    post:
+      summary: Create a form
+      description: Creates a new draft form owned by the authenticated user.
+      operationId: createForm
+      tags: [Forms]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title]
+              properties:
+                title:
+                  type: string
+                  example: Customer Feedback
+                description:
+                  type: string
+                  example: Share your thoughts
+      responses:
+        '201':
+          description: Form created
+          headers:
+            ETag:
+              schema:
+                type: string
+              example: '"1"'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/Form'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    get:
+      summary: List forms
+      description: Returns paginated form summaries owned by the authenticated user.
+      operationId: listForms
+      tags: [Forms]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 20
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [draft, published]
+        - in: query
+          name: search
+          schema:
+            type: string
+        - in: query
+          name: sortBy
+          schema:
+            type: string
+            enum: [createdAt, updatedAt, title]
+            default: createdAt
+        - in: query
+          name: order
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+      responses:
+        '200':
+          description: List of form summaries
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/FormSummary'
+                  pagination:
+                    $ref: '#/components/schemas/PaginationMetadata'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /forms/{id}:
+    get:
+      summary: Get form by ID
+      description: Returns full form details including fields and theme.
+      operationId: getForm
+      tags: [Forms]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Form details
+          headers:
+            ETag:
+              schema:
+                type: string
+              example: '"1"'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/Form'
+        '404':
+          description: Form not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    patch:
+      summary: Update form metadata
+      description: Updates title, description, or visibility with optional If-Match concurrency checking.
+      operationId: updateFormMetadata
+      tags: [Forms]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+        - in: header
+          name: If-Match
+          required: false
+          schema:
+            type: string
+          description: Revision ETag for optimistic concurrency control
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                description:
+                  type: string
+                visibility:
+                  type: string
+                  enum: [public, unlisted]
+                startAt:
+                  type: [string, 'null']
+                  format: date-time
+                  example: '2026-10-26T08:00:00.000Z'
+                endAt:
+                  type: [string, 'null']
+                  format: date-time
+                  example: '2026-10-31T18:00:00.000Z'
+                maxResponses:
+                  type: [integer, 'null']
+                  example: 500
+                notifications:
+                  type: object
+                  properties:
+                    respondentReceipt:
+                      type: boolean
+                      example: true
+                    ownerNotification:
+                      type: boolean
+                      example: true
+                    respondentEmailFieldId:
+                      type: [string, 'null']
+                      example: fld_email
+      responses:
+        '200':
+          description: Form updated
+          headers:
+            ETag:
+              schema:
+                type: string
+              example: '"2"'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/Form'
+        '404':
+          description: Form not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '412':
+          description: Precondition failed (stale If-Match revision)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      summary: Delete form
+      description: Permanently deletes form and all its responses.
+      operationId: deleteForm
+      tags: [Forms]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Form deleted successfully
+        '404':
+          description: Form not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /forms/{id}/fields:
+    put:
+      summary: Replace form fields
+      description: Replaces the entire list of questions for a form with ordering normalization and revision checks.
+      operationId: replaceFormFields
+      tags: [Forms]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+        - in: header
+          name: If-Match
+          required: true
+          schema:
+            type: string
+          description: Required revision ETag for optimistic concurrency control
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [fields]
+              properties:
+                fields:
+                  type: array
+                  maxItems: 100
+                  items:
+                    $ref: '#/components/schemas/Field'
+      responses:
+        '200':
+          description: Fields replaced successfully
+          headers:
+            ETag:
+              schema:
+                type: string
+              example: '"2"'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/Form'
+                  warnings:
+                    type: array
+                    items:
+                      type: string
+                    example: ["Field 'Age' (fld_abc123) had existing responses and its type was changed from 'number' to 'short_text'."]
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Form not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '412':
+          description: Precondition failed (stale If-Match revision)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '428':
+          description: Precondition required (missing If-Match header)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /forms/{id}/theme:
+    put:
+      summary: Update form theme
+      description: Replaces the theme configuration for a form with revision checks.
+      operationId: updateFormTheme
+      tags: [Forms]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+        - in: header
+          name: If-Match
+          required: true
+          schema:
+            type: string
+          description: Required revision ETag for optimistic concurrency control
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Theme'
+      responses:
+        '200':
+          description: Theme updated successfully
+          headers:
+            ETag:
+              schema:
+                type: string
+              example: '"2"'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/Theme'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Form not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '412':
+          description: Precondition failed (stale If-Match revision)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '428':
+          description: Precondition required (missing If-Match header)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /forms/{id}/publish:
+    post:
+      summary: Publish form
+      description: Verifies publication prerequisites, sets status to published, and makes form available for public submission.
+      operationId: publishForm
+      tags: [Forms]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Form published successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/PublicationResponse'
+        '404':
+          description: Form not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Form does not meet publication prerequisites
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /forms/{id}/unpublish:
+    post:
+      summary: Unpublish form
+      description: Reverts form to draft status and immediately blocks public submissions.
+      operationId: unpublishForm
+      tags: [Forms]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Form unpublished successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                      status:
+                        type: string
+                        example: draft
+        '404':
+          description: Form not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /public/forms/{slug}:
+    get:
+      summary: Get public form
+      description: Returns respondent-safe form metadata and fields. Does not return owner details or internal timestamps.
+      operationId: getPublicForm
+      tags: [Public]
+      security: []
+      parameters:
+        - in: path
+          name: slug
+          required: true
+          schema:
+            type: string
+            example: k3x9a0qzvm
+      responses:
+        '200':
+          description: Public form details
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+              example: no-store
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/PublicForm'
+        '404':
+          description: Form not found or unpublished
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /public/forms/{slug}/responses:
+    post:
+      summary: Submit form response
+      description: Validates and persists respondent answers without type coercion.
+      operationId: submitPublicResponse
+      tags: [Public]
+      security: []
+      parameters:
+        - in: path
+          name: slug
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [answers]
+              properties:
+                answers:
+                  type: array
+                  items:
+                    type: object
+                    required: [fieldId, value]
+                    properties:
+                      fieldId:
+                        type: string
+                        example: fld_name
+                      value:
+                        example: Jane Doe
+      responses:
+        '201':
+          description: Response submitted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/SubmissionResponse'
+        '400':
+          description: Answer validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Form unavailable (scheduled for future date, closed deadline, or response limit reached)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Form not found or unpublished
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /forms/{id}/responses:
+    get:
+      summary: List form responses
+      description: Returns paginated responses for a form owned by the authenticated user.
+      operationId: listFormResponses
+      tags: [Responses]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 20
+        - in: query
+          name: sort
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+      responses:
+        '200':
+          description: Paginated responses list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      responses:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/FormResponse'
+                      pagination:
+                        $ref: '#/components/schemas/PaginationMetadata'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Form not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /forms/{id}/responses/export:
+    get:
+      summary: Export responses as CSV
+      description: Streams RFC 4180-compliant CSV of form responses with formula injection protection.
+      operationId: exportResponsesCsv
+      tags: [Responses]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: CSV file download
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+                example: attachment; filename="feedback-responses.csv"
+          content:
+            text/csv:
+              schema:
+                type: string
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Form not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Response count exceeds 10,000 row export limit
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /forms/{id}/responses/{responseId}:
+    get:
+      summary: Get single response
+      description: Returns full details and answers for a specific response.
+      operationId: getResponseById
+      tags: [Responses]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: responseId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Full response object
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/FormResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Response or form not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      summary: Delete single response
+      description: Permanently deletes a specific response submission.
+      operationId: deleteResponseById
+      tags: [Responses]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: responseId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Response deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      deleted:
+                        type: boolean
+                        example: true
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Response or form not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /dashboard/stats:
+    get:
+      summary: Get dashboard summary statistics
+      description: Returns aggregate counts across all forms owned by the user and month-over-month trend.
+      operationId: getDashboardStats
+      tags: [Analytics]
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Summary stats
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      totalForms:
+                        type: integer
+                        example: 5
+                      totalResponses:
+                        type: integer
+                        example: 120
+                      activeForms:
+                        type: integer
+                        example: 3
+                      responsesThisMonth:
+                        type: integer
+                        example: 45
+                      responsesLastMonth:
+                        type: integer
+                        example: 30
+                      responsesPercentChange:
+                        type: [number, 'null']
+                        example: 50
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /forms/{id}/analytics:
+    get:
+      summary: Get form analytics summary
+      description: Returns per-question metric summaries (frequencies, averages, completion rates).
+      operationId: getFormAnalytics
+      tags: [Analytics]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Analytics summary per field
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      formId:
+                        type: string
+                      title:
+                        type: string
+                      totalResponses:
+                        type: integer
+                      fields:
+                        type: array
+                        items:
+                          type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Form not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /forms/{id}/analytics/trends:
+    get:
+      summary: Get daily response submission trends
+      description: Returns daily submission counts zero-filled over the requested range.
+      operationId: getFormTrends
+      tags: [Analytics]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: range
+          schema:
+            type: string
+            enum: [7d, 30d, 90d]
+            default: 30d
+      responses:
+        '200':
+          description: Trend timeline
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      formId:
+                        type: string
+                      range:
+                        type: string
+                        example: 30d
+                      points:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            date:
+                              type: string
+                              example: '2026-10-25'
+                            count:
+                              type: integer
+                              example: 4
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Form not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /ai/generate-form:
+    post:
+      summary: Generate form schema using Formly AI
+      description: Generates a complete structured form schema (title, description, questions, choices, validation, theme) from a natural language prompt.
+      operationId: generateFormWithAI
+      tags: [AI]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [prompt]
+              properties:
+                prompt:
+                  type: string
+                  example: Create a college event registration form with name, email, department, and attendance preference.
+      responses:
+        '200':
+          description: Form schema generated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/AiGeneratedForm'
+                  provider:
+                    type: string
+                    example: Formly AI
+        '400':
+          description: Missing or invalid prompt
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /ai/forms/{id}/chat:
+    post:
+      summary: Conversational response analysis with Formly AI
+      description: Interactive analysis of collected submissions for a specific form. Computes distributions, answers queries, and generates actionable recommendations.
+      operationId: chatWithFormlyAI
+      tags: [AI]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: Target form ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [messages]
+              properties:
+                messages:
+                  type: array
+                  items:
+                    type: object
+                    required: [role, content]
+                    properties:
+                      role:
+                        type: string
+                        enum: [user, assistant]
+                        example: user
+                      content:
+                        type: string
+                        example: Summarize the key trends and takeaways from the responses.
+      responses:
+        '200':
+          description: AI analysis response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      reply:
+                        type: string
+                        example: '### 📊 Formly AI Analysis...'
+                      provider:
+                        type: string
+                        example: Formly AI
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Forbidden (user does not own this form)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Form not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              example: INTERNAL_ERROR
+            message:
+              type: string
+              example: An unexpected error occurred.
+            details:
+              type: array
+              items:
+                type: object
+                properties:
+                  path:
+                    type: string
+                  message:
+                    type: string
+            requestId:
+              type: string
+
+    UserProfile:
+      type: object
+      properties:
+        id:
+          type: string
+          example: 64f1a2b3c4d5e6f7a8b9c0d1
+        name:
+          type: string
+          example: Jane Doe
+        email:
+          type: string
+          format: email
+          example: user@example.com
+        createdAt:
+          type: string
+          format: date-time
+
+    AuthTokenResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            user:
+              $ref: '#/components/schemas/UserProfile'
+            accessToken:
+              type: string
+              example: eyJhbGciOi...
+            refreshToken:
+              type: string
+              example: dXNlcl9yZWZyZXNo...
+            accessTokenExpiresInSeconds:
+              type: integer
+              example: 900
+
+    PaginationMetadata:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 45
+        totalPages:
+          type: integer
+          example: 3
+
+    FormSummary:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+          enum: [draft, published]
+        visibility:
+          type: string
+          enum: [public, unlisted]
+        slug:
+          type: string
+        fieldCount:
+          type: integer
+        responseCount:
+          type: integer
+        revision:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        publishedAt:
+          type: [string, 'null']
+          format: date-time
+        startAt:
+          type: [string, 'null']
+          format: date-time
+          example: '2026-10-26T08:00:00.000Z'
+        endAt:
+          type: [string, 'null']
+          format: date-time
+          example: '2026-10-31T18:00:00.000Z'
+        availabilityStatus:
+          type: string
+          enum: [scheduled, open, closed]
+          example: open
+
+    Form:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+          enum: [draft, published]
+        visibility:
+          type: string
+          enum: [public, unlisted]
+        slug:
+          type: string
+        revision:
+          type: integer
+        fields:
+          type: array
+          items:
+            $ref: '#/components/schemas/Field'
+        theme:
+          $ref: '#/components/schemas/Theme'
+        startAt:
+          type: [string, 'null']
+          format: date-time
+          example: '2026-10-26T08:00:00.000Z'
+        endAt:
+          type: [string, 'null']
+          format: date-time
+          example: '2026-10-31T18:00:00.000Z'
+        availabilityStatus:
+          type: string
+          enum: [scheduled, open, closed]
+          example: open
+        maxResponses:
+          type: [integer, 'null']
+          example: 500
+        notifications:
+          type: object
+          properties:
+            respondentReceipt:
+              type: boolean
+              example: true
+            ownerNotification:
+              type: boolean
+              example: true
+            respondentEmailFieldId:
+              type: [string, 'null']
+              example: fld_email
+        publishedAt:
+          type: [string, 'null']
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    Field:
+      type: object
+      required: [label, type, order]
+      properties:
+        id:
+          type: string
+          example: fld_a1b2c3d4
+        label:
+          type: string
+          example: Full Name
+        type:
+          type: string
+          enum: [short_text, long_text, number, yes_no, email, single_select, multi_select, checkbox, dropdown, rating, date]
+        required:
+          type: boolean
+          default: false
+        placeholder:
+          type: string
+          default: ''
+        description:
+          type: string
+          default: ''
+        order:
+          type: integer
+          example: 0
+        options:
+          type: array
+          items:
+            type: string
+          example: ['Option 1', 'Option 2']
+        validation:
+          type: object
+          properties:
+            minLength:
+              type: integer
+            maxLength:
+              type: integer
+            min:
+              type: number
+            max:
+              type: number
+            minDate:
+              type: string
+              format: date
+            maxDate:
+              type: string
+              format: date
+
+    Theme:
+      type: object
+      required: [name, primaryColor, backgroundColor, fontFamily]
+      properties:
+        name:
+          type: string
+          example: default
+        primaryColor:
+          type: string
+          example: '#4F46E5'
+        backgroundColor:
+          type: string
+          example: '#FFFFFF'
+        fontFamily:
+          type: string
+          enum: [Inter, Roboto, Open Sans, Lato, Poppins, Merriweather, system-ui]
+          example: Inter
+
+    PublicationResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        status:
+          type: string
+          example: published
+        visibility:
+          type: string
+          example: unlisted
+        slug:
+          type: string
+          example: k3x9a0qzvm
+        publicPath:
+          type: string
+          example: /f/k3x9a0qzvm
+        publishedAt:
+          type: string
+          format: date-time
+
+    PublicForm:
+      type: object
+      properties:
+        slug:
+          type: string
+          example: k3x9a0qzvm
+        status:
+          type: string
+          example: published
+        title:
+          type: string
+          example: Customer Survey
+        description:
+          type: string
+          example: Help us improve
+        startAt:
+          type: [string, 'null']
+          format: date-time
+          example: '2026-10-26T08:00:00.000Z'
+        endAt:
+          type: [string, 'null']
+          format: date-time
+          example: '2026-10-31T18:00:00.000Z'
+        availabilityStatus:
+          type: string
+          enum: [scheduled, open, closed]
+          example: open
+        fields:
+          type: array
+          items:
+            $ref: '#/components/schemas/Field'
+        theme:
+          $ref: '#/components/schemas/Theme'
+
+    AiGeneratedForm:
+      type: object
+      properties:
+        title:
+          type: string
+          example: Food Preferences Survey
+        description:
+          type: string
+          example: Survey regarding dietary requirements and favorites
+        theme:
+          $ref: '#/components/schemas/Theme'
+        fields:
+          type: array
+          items:
+            $ref: '#/components/schemas/Field'
+
+    SubmissionResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        submittedAt:
+          type: string
+          format: date-time
+
+    FormResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          example: 66f1a2b3c4d5e6f7a8b9c0d1
+        formId:
+          type: string
+          example: 66f1a2b3c4d5e6f7a8b9c0d2
+        answers:
+          type: array
+          items:
+            type: object
+            properties:
+              fieldId:
+                type: string
+                example: fld_name
+              value:
+                example: Jane Doe
+        submittedAt:
+          type: string
+          format: date-time
+
+  responses:
+    Unauthorized:
+      description: Unauthorized - missing or invalid access token
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+tags:
+  - name: Health
+    description: Health and readiness endpoints
+  - name: Auth
+    description: Authentication endpoints
+  - name: Forms
+    description: Form CRUD operations (private)
+  - name: Public
+    description: Public form retrieval and submission
+  - name: Responses
+    description: Response management (private)
+  - name: Analytics
+    description: Dashboard and form analytics (private)
+  - name: AI
+    description: Formly AI automated form generation and response insights (private)
