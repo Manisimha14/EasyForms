@@ -30,6 +30,9 @@ export function LandingPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
 
+  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1';
+  const apiDocsUrl = apiBaseUrl.replace(/\/api\/v1\/?$/, '/api-docs');
+
   // Active option state for hero interactive card
   const [selectedHeroOption, setSelectedHeroOption] = useState(0);
 
@@ -140,7 +143,7 @@ export function LandingPage() {
               FAQ
             </a>
             <a
-              href="http://localhost:8080/api-docs"
+              href={apiDocsUrl}
               target="_blank"
               rel="noreferrer"
               className="px-3 py-1.5 text-xs font-semibold text-orange-700 hover:text-orange-900 hover:bg-orange-50 rounded-lg transition-all flex items-center gap-1"
@@ -1240,7 +1243,7 @@ export function LandingPage() {
               FAQ
             </a>
             <a
-              href="http://localhost:8080/api-docs"
+              href={apiDocsUrl}
               target="_blank"
               rel="noreferrer"
               className="text-orange-600 hover:text-orange-700 transition-colors flex items-center gap-1"

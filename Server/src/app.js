@@ -89,7 +89,20 @@ export function createApp() {
   const allowedOrigins = env.CORS_ORIGINS.split(',').map((o) => o.trim()).filter(Boolean);
   app.use(
     cors({
-      origin: allowedOrigins,
+      origin: (origin, callback) => {
+        // Allow requests with no origin (mobile apps, curl, server-to-server, health checks)
+        if (!origin || allowedOrigins.includes('*') || allowedOrigins.includes(origin)) {
+          return callback(null, true);
+        }
+        // Allow Vercel preview & production deployments if vercel.app is permitted
+        const isVercelAllowed = allowedOrigins.some(
+          (o) => o.includes('vercel.app') && origin.endsWith('.vercel.app')
+        );
+        if (isVercelAllowed) {
+          return callback(null, true);
+        }
+        callback(null, false);
+      },
       methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
       allowedHeaders: ['Authorization', 'Content-Type', 'If-Match', 'X-Request-Id'],
       exposedHeaders: ['ETag', 'X-Request-Id', 'RateLimit', 'Retry-After'],
