@@ -652,6 +652,10 @@ export function SettingsTab({ form, onSaveMetadata, isSaving }) {
                   <span>{testEmailResult.message}</span>
                 </div>
               )}
+
+              <p className="text-[11px] text-stone-400 bg-white/70 p-2 rounded border border-orange-100 leading-normal">
+                💡 <strong>Render Free Tier Note:</strong> Render blocks outbound SMTP ports 25, 465, and 587. To send emails on Render Free tier, add a free <code className="bg-stone-100 px-1 py-0.5 rounded font-mono text-primary-700">RESEND_API_KEY</code> from <a href="https://resend.com" target="_blank" rel="noreferrer" className="underline font-semibold text-primary-600">resend.com</a> in your Render environment variables.
+              </p>
             </div>
           </div>
         </Card>

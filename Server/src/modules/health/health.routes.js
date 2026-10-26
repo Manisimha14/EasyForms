@@ -19,9 +19,13 @@ router.get('/', (_req, res) => {
       version: env.APP_VERSION,
       uptimeSeconds: Math.floor((Date.now() - startTime) / 1000),
       email: {
-        mode: env.EMAIL_MODE,
-        provider: env.EMAIL_PROVIDER,
-        configured: Boolean(env.SMTP_USER && env.SMTP_APP_PASSWORD),
+        mode: env.RESEND_API_KEY || env.BREVO_API_KEY ? 'api' : env.EMAIL_MODE,
+        provider: env.RESEND_API_KEY ? 'resend' : env.BREVO_API_KEY ? 'brevo' : env.EMAIL_PROVIDER,
+        configured: Boolean(
+          env.RESEND_API_KEY ||
+          env.BREVO_API_KEY ||
+          (env.SMTP_USER && env.SMTP_APP_PASSWORD)
+        ),
       },
     },
   });

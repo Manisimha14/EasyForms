@@ -39,7 +39,67 @@ export function isValidEmail(email) {
 }
 
 /**
- * Create or reuse the Nodemailer transporter.
+ * Send email via Resend REST API (HTTPS port 443).
+ * Never blocked on Render Free tier.
+ */
+async function sendViaResendApi({ to, subject, html, text }) {
+  const from = env.EMAIL_FROM && !env.EMAIL_FROM.includes('easyforms.local')
+    ? env.EMAIL_FROM
+    : 'Easy Forms <onboarding@resend.dev>';
+
+  const res = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${env.RESEND_API_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      from,
+      to: [to.trim()],
+      subject,
+      html,
+      text,
+    }),
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || data.error?.message || `Resend API error (${res.status})`);
+  }
+  return { messageId: data.id };
+}
+
+/**
+ * Send email via Brevo REST API (HTTPS port 443).
+ * Never blocked on Render Free tier.
+ */
+async function sendViaBrevoApi({ to, subject, html, text }) {
+  const senderEmail = env.SMTP_USER || 'noreply@easyforms.app';
+  const res = await fetch('https://api.brevo.com/v3/smtp/email', {
+    method: 'POST',
+    headers: {
+      'api-key': env.BREVO_API_KEY,
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    },
+    body: JSON.stringify({
+      sender: { name: 'Easy Forms', email: senderEmail },
+      to: [{ email: to.trim() }],
+      subject,
+      htmlContent: html,
+      textContent: text,
+    }),
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || `Brevo API error (${res.status})`);
+  }
+  return { messageId: data.messageId };
+}
+
+/**
+ * Create or reuse the email transporter.
  */
 let transporterInstance = null;
 
@@ -48,39 +108,48 @@ export function getTransporter() {
     return transporterInstance;
   }
 
+  // 1. Resend HTTP REST API (Port 443 - works on Render Free Tier without port blocks)
+  if (env.RESEND_API_KEY || env.EMAIL_PROVIDER === 'resend') {
+    transporterInstance = {
+      sendMail: async (mailOptions) => sendViaResendApi(mailOptions),
+      verify: async () => true,
+    };
+    return transporterInstance;
+  }
+
+  // 2. Brevo HTTP REST API (Port 443 - works on Render Free Tier without port blocks)
+  if (env.BREVO_API_KEY || env.EMAIL_PROVIDER === 'brevo') {
+    transporterInstance = {
+      sendMail: async (mailOptions) => sendViaBrevoApi(mailOptions),
+      verify: async () => true,
+    };
+    return transporterInstance;
+  }
+
+  // 3. SMTP Mode (for paid Render plans, VPS, or local development)
   if (env.EMAIL_MODE === 'smtp') {
     const cleanPassword = (env.SMTP_APP_PASSWORD || '').replace(/\s+/g, '');
     const isGmail = env.EMAIL_PROVIDER === 'gmail' || (env.SMTP_USER && env.SMTP_USER.endsWith('@gmail.com'));
-    const port = Number(env.SMTP_PORT) || 465;
+    const port = Number(env.SMTP_PORT) || 587;
     const isSecure = env.SMTP_SECURE !== undefined ? Boolean(env.SMTP_SECURE) : port === 465;
 
-    if (isGmail && (!env.SMTP_HOST || env.SMTP_HOST === 'smtp.gmail.com')) {
-      transporterInstance = nodemailer.createTransport({
-        service: 'gmail',
-        auth: {
-          user: env.SMTP_USER,
-          pass: cleanPassword,
-        },
-        connectionTimeout: 10000,
-        greetingTimeout: 10000,
-        socketTimeout: 15000,
-      });
-    } else {
-      transporterInstance = nodemailer.createTransport({
-        host: env.SMTP_HOST || (isGmail ? 'smtp.gmail.com' : 'localhost'),
-        port,
-        secure: isSecure,
-        auth: {
-          user: env.SMTP_USER,
-          pass: cleanPassword,
-        },
-        connectionTimeout: 10000,
-        greetingTimeout: 10000,
-        socketTimeout: 15000,
-      });
-    }
+    transporterInstance = nodemailer.createTransport({
+      host: env.SMTP_HOST || (isGmail ? 'smtp.gmail.com' : 'localhost'),
+      port,
+      secure: isSecure,
+      auth: {
+        user: env.SMTP_USER,
+        pass: cleanPassword,
+      },
+      tls: {
+        rejectUnauthorized: true,
+      },
+      connectionTimeout: 10000,
+      greetingTimeout: 10000,
+      socketTimeout: 15000,
+    });
   } else {
-    // Mock / test transport
+    // 4. Mock / test transport
     transporterInstance = {
       sendMail: async (mailOptions) => {
         sentEmails.push({
@@ -108,6 +177,16 @@ export function resetTransporter() {
  * Useful for startup logging and diagnostics.
  */
 export async function verifyEmailTransporter() {
+  if (env.RESEND_API_KEY || env.EMAIL_PROVIDER === 'resend') {
+    logger.info({ provider: 'resend' }, 'Email service using Resend HTTP API (HTTPS port 443 — works on Render Free Tier)');
+    return { success: true, mode: 'api', provider: 'resend' };
+  }
+
+  if (env.BREVO_API_KEY || env.EMAIL_PROVIDER === 'brevo') {
+    logger.info({ provider: 'brevo' }, 'Email service using Brevo HTTP API (HTTPS port 443 — works on Render Free Tier)');
+    return { success: true, mode: 'api', provider: 'brevo' };
+  }
+
   if (env.EMAIL_MODE !== 'smtp') {
     logger.info({ mode: env.EMAIL_MODE }, 'Email service running in MOCK mode (emails recorded in-memory)');
     return { success: true, mode: 'mock' };
@@ -133,16 +212,20 @@ export async function verifyEmailTransporter() {
     );
     return { success: true, mode: 'smtp' };
   } catch (err) {
+    let errMsg = err.message || 'SMTP connection verification failed';
+    if (errMsg.includes('timeout') || errMsg.includes('ETIMEDOUT') || errMsg.includes('Connection timeout')) {
+      errMsg = 'Render Free tier blocks outbound SMTP ports (465/587). Add RESEND_API_KEY in Render dashboard to send over HTTPS (port 443).';
+    }
     logger.error(
       {
-        err: err.message,
+        err: errMsg,
         mode: 'smtp',
         provider: env.EMAIL_PROVIDER,
         user: env.SMTP_USER,
       },
-      'SMTP connection verification failed. Please check credentials or host/port access.'
+      errMsg
     );
-    return { success: false, mode: 'smtp', error: err.message };
+    return { success: false, mode: 'smtp', error: errMsg };
   }
 }
 
@@ -233,8 +316,13 @@ export async function sendEmailWithRetry({
       logger.info({ type, to, attempt }, 'Email delivered successfully');
       return job;
     } catch (err) {
-      lastError = err.message || 'Unknown SMTP error';
-      logger.warn({ type, to, attempt, err: lastError }, 'SMTP delivery attempt failed');
+      const rawError = err.message || 'Unknown SMTP error';
+      if (rawError.includes('timeout') || rawError.includes('ETIMEDOUT') || rawError.includes('Connection timeout')) {
+        lastError = 'Render Free Tier blocks outbound SMTP ports (465/587). Add RESEND_API_KEY in Render dashboard to send over HTTPS (port 443).';
+      } else {
+        lastError = rawError;
+      }
+      logger.warn({ type, to, attempt, err: lastError }, 'Email delivery attempt failed');
 
       if (attempt < maxAttempts) {
         // Backoff: 100ms * 2^attempt (short in tests, reliable in production)

@@ -32,15 +32,17 @@ const envSchema = z.object({
 
   REQUEST_TIMEOUT_MS: z.coerce.number().int().positive().default(30000),
 
-  // Transactional Email Configuration
+  // Transactional Email Configuration (SMTP or HTTPS API for Render Free Tier)
   EMAIL_PROVIDER: z.string().default('gmail'),
   SMTP_HOST: z.string().default('smtp.gmail.com'),
-  SMTP_PORT: z.coerce.number().int().positive().default(465),
-  SMTP_SECURE: z.coerce.boolean().default(true),
+  SMTP_PORT: z.coerce.number().int().positive().default(587),
+  SMTP_SECURE: z.coerce.boolean().default(false),
   SMTP_USER: z.string().default(''),
   SMTP_APP_PASSWORD: z.string().default(''),
   EMAIL_FROM: z.string().default('Easy Forms <noreply@easyforms.local>'),
-  EMAIL_MODE: z.enum(['mock', 'smtp']).default('mock'),
+  EMAIL_MODE: z.enum(['mock', 'smtp', 'api']).default('mock'),
+  RESEND_API_KEY: z.string().default(''),
+  BREVO_API_KEY: z.string().default(''),
 
   // AI Configuration (Gemini with Groq Fallback)
   GEMINI_API_KEY: z.string().default(''),
