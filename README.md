@@ -264,10 +264,11 @@ Below is the complete configuration matrix for running Easy Forms. Default fallb
 ### Provide links or instructions for accessing the final application.
 
 #### Live Endpoints & Interactive References
-- **Frontend Web Application**: Deployable on Vercel or Netlify (local dev: `http://localhost:5173`)
-- **Backend REST API**: Deployable on Render, Railway, or Google Cloud Run (local dev: `http://localhost:8080/api/v1`)
-- **Interactive Scalar Documentation**: Hosted directly by the backend at `http://localhost:8080/api-docs` (and `/api-docs` on production host)
-- **OpenAPI 3.1 Raw Spec**: Accessible at `http://localhost:8080/api-docs/openapi.yaml` and `http://localhost:8080/api-docs/openapi.json`
+- **Backend REST API (Live on Render)**: [`https://easyforms-ofk0.onrender.com/api/v1`](https://easyforms-ofk0.onrender.com/api/v1)
+- **Interactive Scalar Documentation (Live on Render)**: [`https://easyforms-ofk0.onrender.com/api-docs`](https://easyforms-ofk0.onrender.com/api-docs)
+- **Liveness Health Check (Live on Render)**: [`https://easyforms-ofk0.onrender.com/api/v1/health`](https://easyforms-ofk0.onrender.com/api/v1/health)
+- **OpenAPI 3.1 Raw Spec**: Accessible at `https://easyforms-ofk0.onrender.com/api-docs/openapi.yaml` and `https://easyforms-ofk0.onrender.com/api-docs/openapi.json`
+- **Frontend Web Application (Vercel)**: Point `VITE_API_BASE_URL` to `https://easyforms-ofk0.onrender.com/api/v1` during Vercel project import.
 
 #### Backend Production Deployment (e.g., Render / Railway / Cloud Run)
 1. Point your cloud provider to the repository root and select the `Server` subfolder as the Root Directory.
