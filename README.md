@@ -2,6 +2,8 @@
 
 > **A modern, full-stack form studio and response analytics platform with time-limited availability scheduling and Formly AI intelligence.**
 
+[![Vercel Deployment](https://img.shields.io/badge/Frontend-Vercel_Live-000000?style=flat-square&logo=vercel)](https://easyforms-beta.vercel.app)
+[![Render Deployment](https://img.shields.io/badge/Backend-Render_Live-46E3B7?style=flat-square&logo=render)](https://easyforms-ofk0.onrender.com)
 [![Node.js](https://img.shields.io/badge/Node.js-20+-68a063?style=flat-square&logo=node.js)](https://nodejs.org/)
 [![React](https://img.shields.io/badge/React-19-61dafb?style=flat-square&logo=react)](https://react.dev/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.4-38bdf8?style=flat-square&logo=tailwind-css)](https://tailwindcss.com/)
@@ -264,11 +266,11 @@ Below is the complete configuration matrix for running Easy Forms. Default fallb
 ### Provide links or instructions for accessing the final application.
 
 #### Live Endpoints & Interactive References
+- **Frontend Web Application (Live on Vercel)**: [`https://easyforms-beta.vercel.app`](https://easyforms-beta.vercel.app)
 - **Backend REST API (Live on Render)**: [`https://easyforms-ofk0.onrender.com/api/v1`](https://easyforms-ofk0.onrender.com/api/v1)
 - **Interactive Scalar Documentation (Live on Render)**: [`https://easyforms-ofk0.onrender.com/api-docs`](https://easyforms-ofk0.onrender.com/api-docs)
 - **Liveness Health Check (Live on Render)**: [`https://easyforms-ofk0.onrender.com/api/v1/health`](https://easyforms-ofk0.onrender.com/api/v1/health)
 - **OpenAPI 3.1 Raw Spec**: Accessible at `https://easyforms-ofk0.onrender.com/api-docs/openapi.yaml` and `https://easyforms-ofk0.onrender.com/api-docs/openapi.json`
-- **Frontend Web Application (Vercel)**: Point `VITE_API_BASE_URL` to `https://easyforms-ofk0.onrender.com/api/v1` during Vercel project import.
 
 #### Backend Production Deployment (e.g., Render / Railway / Cloud Run)
 1. Point your cloud provider to the repository root and select the `Server` subfolder as the Root Directory.
