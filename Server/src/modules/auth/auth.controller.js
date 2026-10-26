@@ -61,3 +61,11 @@ export const deleteMe = asyncHandler(async (req, res) => {
   await authService.deleteMe(req.userId, req.body);
   res.status(204).send();
 });
+
+export const sendTestEmail = asyncHandler(async (req, res) => {
+  const result = await authService.sendTestEmail(req.userId);
+  res.status(200).json({
+    success: true,
+    data: result,
+  });
+});

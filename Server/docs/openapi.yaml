@@ -47,6 +47,18 @@ paths:
                       uptimeSeconds:
                         type: integer
                         example: 3600
+                      email:
+                        type: object
+                        properties:
+                          mode:
+                            type: string
+                            example: smtp
+                          provider:
+                            type: string
+                            example: gmail
+                          configured:
+                            type: boolean
+                            example: true
 
   /health/ready:
     get:
@@ -348,6 +360,53 @@ paths:
                 $ref: '#/components/schemas/AuthTokenResponse'
         '401':
           description: Current password is incorrect
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/test-email:
+    post:
+      summary: Send test verification email
+      description: Sends a test transactional email to the authenticated user's email address to verify SMTP configuration.
+      operationId: sendTestEmail
+      tags: [Auth]
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Test email dispatched successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      sent:
+                        type: boolean
+                        example: true
+                      to:
+                        type: string
+                        example: user@example.com
+                      mode:
+                        type: string
+                        example: smtp
+                      provider:
+                        type: string
+                        example: gmail
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: SMTP delivery failed
           content:
             application/json:
               schema:

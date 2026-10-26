@@ -21,6 +21,7 @@ import {
   RotateCcw,
 } from 'lucide-react';
 import { LIMITS } from '../../lib/constants';
+import { authApi } from '../../api/client';
 
 /**
  * Format a Date or ISO string into local 'YYYY-MM-DDTHH:mm' for datetime-local input.
@@ -96,6 +97,27 @@ export function SettingsTab({ form, onSaveMetadata, isSaving }) {
   );
 
   const [dateError, setDateError] = useState('');
+  const [testEmailLoading, setTestEmailLoading] = useState(false);
+  const [testEmailResult, setTestEmailResult] = useState(null);
+
+  const handleSendTestEmail = async () => {
+    setTestEmailLoading(true);
+    setTestEmailResult(null);
+    try {
+      const res = await authApi.sendTestEmail();
+      setTestEmailResult({
+        success: true,
+        message: `Test email sent to ${res.data?.to || 'your email'}! (Mode: ${res.data?.mode || 'smtp'})`,
+      });
+    } catch (err) {
+      setTestEmailResult({
+        success: false,
+        message: err.message || 'Failed to send test email. Please verify SMTP credentials on the server.',
+      });
+    } finally {
+      setTestEmailLoading(false);
+    }
+  };
 
   // Extract all email questions in form
   const emailFields = (form?.fields || []).filter((f) => f.type === 'email');
@@ -587,6 +609,49 @@ export function SettingsTab({ form, onSaveMetadata, isSaving }) {
                   </p>
                 </div>
               </label>
+            </div>
+
+            {/* Test Email Channel Verification */}
+            <div className="p-4 rounded-xl border border-orange-200/80 bg-orange-50/40 space-y-2.5">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div>
+                  <span className="text-xs font-bold text-stone-900 flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-primary-600" />
+                    Verify Production Mail Service
+                  </span>
+                  <p className="text-[11px] text-stone-500 mt-0.5">
+                    Test your backend SMTP setup by sending a verification email to your signed-in account.
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleSendTestEmail}
+                  isLoading={testEmailLoading}
+                  className="border-primary-300 text-primary-700 hover:bg-primary-100/60 bg-white shadow-none text-xs shrink-0"
+                >
+                  <Mail className="w-3.5 h-3.5 mr-1 text-primary-600" />
+                  Send Test Email
+                </Button>
+              </div>
+
+              {testEmailResult && (
+                <div
+                  className={`p-2.5 rounded-lg text-xs font-medium flex items-start gap-2 ${
+                    testEmailResult.success
+                      ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                      : 'bg-rose-50 text-rose-800 border border-rose-200'
+                  }`}
+                >
+                  {testEmailResult.success ? (
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                  ) : (
+                    <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                  )}
+                  <span>{testEmailResult.message}</span>
+                </div>
+              )}
             </div>
           </div>
         </Card>

@@ -358,4 +358,24 @@ describe('Authentication endpoints (/api/v1/auth)', () => {
       expect(tokensInDb).toHaveLength(0);
     });
   });
+
+  describe('POST /api/v1/auth/test-email', () => {
+    test('sends a test email for authenticated user', async () => {
+      const { accessToken, user } = await createTestUser();
+
+      const res = await request(app)
+        .post('/api/v1/auth/test-email')
+        .set('Authorization', `Bearer ${accessToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.sent).toBe(true);
+      expect(res.body.data.to).toBe(user.email);
+    });
+
+    test('rejects unauthenticated request with 401', async () => {
+      const res = await request(app).post('/api/v1/auth/test-email');
+      expect(res.status).toBe(401);
+    });
+  });
 });

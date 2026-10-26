@@ -18,6 +18,11 @@ router.get('/', (_req, res) => {
       status: 'ok',
       version: env.APP_VERSION,
       uptimeSeconds: Math.floor((Date.now() - startTime) / 1000),
+      email: {
+        mode: env.EMAIL_MODE,
+        provider: env.EMAIL_PROVIDER,
+        configured: Boolean(env.SMTP_USER && env.SMTP_APP_PASSWORD),
+      },
     },
   });
 });

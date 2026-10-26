@@ -192,6 +192,7 @@ export const authApi = {
   updateMe: (name) => request('/auth/me', { method: 'PATCH', body: { name } }),
   changePassword: (payload) => request('/auth/change-password', { method: 'POST', body: payload }),
   deleteAccount: (password) => request('/auth/me', { method: 'DELETE', body: { password } }),
+  sendTestEmail: () => request('/auth/test-email', { method: 'POST' }),
 };
 
 export const formsApi = {

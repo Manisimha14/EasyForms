@@ -9,7 +9,7 @@ const emailJobSchema = new mongoose.Schema(
     type: {
       type: String,
       required: true,
-      enum: ['respondent_receipt', 'owner_notification', 'closing_reminder'],
+      enum: ['respondent_receipt', 'owner_notification', 'closing_reminder', 'test_email'],
     },
     to: {
       type: String,

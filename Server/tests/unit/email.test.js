@@ -5,6 +5,7 @@ import {
   isValidEmail,
   sendEmailWithRetry,
   handleSubmissionNotifications,
+  verifyEmailTransporter,
   getSentEmails,
   clearSentEmails,
 } from '../../src/services/email.service.js';
@@ -195,6 +196,14 @@ describe('Transactional Email Service', () => {
 
       // No email sent, but no error thrown
       expect(getSentEmails()).toHaveLength(0);
+    });
+  });
+
+  describe('verifyEmailTransporter', () => {
+    test('succeeds in mock mode', async () => {
+      const res = await verifyEmailTransporter();
+      expect(res.success).toBe(true);
+      expect(res.mode).toBe('mock');
     });
   });
 });

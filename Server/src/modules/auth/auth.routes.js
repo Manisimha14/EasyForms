@@ -66,4 +66,6 @@ router.delete(
   authController.deleteMe
 );
 
+router.post('/test-email', authenticate, authController.sendTestEmail);
+
 export { router as authRoutes };

@@ -50,23 +50,33 @@ export function getTransporter() {
 
   if (env.EMAIL_MODE === 'smtp') {
     const cleanPassword = (env.SMTP_APP_PASSWORD || '').replace(/\s+/g, '');
-    if (env.EMAIL_PROVIDER === 'gmail') {
+    const isGmail = env.EMAIL_PROVIDER === 'gmail' || (env.SMTP_USER && env.SMTP_USER.endsWith('@gmail.com'));
+    const port = Number(env.SMTP_PORT) || 465;
+    const isSecure = env.SMTP_SECURE !== undefined ? Boolean(env.SMTP_SECURE) : port === 465;
+
+    if (isGmail && (!env.SMTP_HOST || env.SMTP_HOST === 'smtp.gmail.com')) {
       transporterInstance = nodemailer.createTransport({
         service: 'gmail',
         auth: {
           user: env.SMTP_USER,
           pass: cleanPassword,
         },
+        connectionTimeout: 10000,
+        greetingTimeout: 10000,
+        socketTimeout: 15000,
       });
     } else {
       transporterInstance = nodemailer.createTransport({
-        host: env.SMTP_HOST,
-        port: env.SMTP_PORT,
-        secure: env.SMTP_SECURE, // true for 465, false for other ports (587)
+        host: env.SMTP_HOST || (isGmail ? 'smtp.gmail.com' : 'localhost'),
+        port,
+        secure: isSecure,
         auth: {
           user: env.SMTP_USER,
           pass: cleanPassword,
         },
+        connectionTimeout: 10000,
+        greetingTimeout: 10000,
+        socketTimeout: 15000,
       });
     }
   } else {
@@ -91,6 +101,49 @@ export function getTransporter() {
  */
 export function resetTransporter() {
   transporterInstance = null;
+}
+
+/**
+ * Verify SMTP connection.
+ * Useful for startup logging and diagnostics.
+ */
+export async function verifyEmailTransporter() {
+  if (env.EMAIL_MODE !== 'smtp') {
+    logger.info({ mode: env.EMAIL_MODE }, 'Email service running in MOCK mode (emails recorded in-memory)');
+    return { success: true, mode: 'mock' };
+  }
+
+  const cleanPassword = (env.SMTP_APP_PASSWORD || '').replace(/\s+/g, '');
+  if (!env.SMTP_USER || !cleanPassword) {
+    const msg = 'EMAIL_MODE is set to "smtp" but SMTP_USER or SMTP_APP_PASSWORD is not provided in environment variables';
+    logger.warn({ mode: 'smtp' }, msg);
+    return { success: false, mode: 'smtp', error: msg };
+  }
+
+  try {
+    const transporter = getTransporter();
+    await transporter.verify();
+    logger.info(
+      {
+        mode: 'smtp',
+        provider: env.EMAIL_PROVIDER,
+        user: env.SMTP_USER,
+      },
+      'SMTP connection verified successfully with mail provider'
+    );
+    return { success: true, mode: 'smtp' };
+  } catch (err) {
+    logger.error(
+      {
+        err: err.message,
+        mode: 'smtp',
+        provider: env.EMAIL_PROVIDER,
+        user: env.SMTP_USER,
+      },
+      'SMTP connection verification failed. Please check credentials or host/port access.'
+    );
+    return { success: false, mode: 'smtp', error: err.message };
+  }
 }
 
 /**
@@ -155,11 +208,14 @@ export async function sendEmailWithRetry({
   let attempt = job?.attempts || 0;
   let lastError = null;
 
+  const defaultFrom = env.SMTP_USER ? `Easy Forms <${env.SMTP_USER}>` : 'Easy Forms <noreply@easyforms.local>';
+  const fromAddress = env.EMAIL_FROM && !env.EMAIL_FROM.includes('easyforms.local') ? env.EMAIL_FROM : defaultFrom;
+
   while (attempt < maxAttempts) {
     attempt += 1;
     try {
       await transporter.sendMail({
-        from: env.EMAIL_FROM || 'Easy Forms <noreply@easyforms.local>',
+        from: fromAddress,
         to: to.trim(),
         subject,
         html,

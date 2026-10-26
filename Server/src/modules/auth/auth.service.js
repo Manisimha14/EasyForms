@@ -7,6 +7,7 @@ import { User } from '../../models/user.model.js';
 import { RefreshToken } from '../../models/refresh-token.model.js';
 import { Form } from '../../models/form.model.js';
 import { Response } from '../../models/response.model.js';
+import { sendEmailWithRetry } from '../../services/email.service.js';
 import {
   ConflictError,
   InvalidCredentialsError,
@@ -267,4 +268,58 @@ export async function deleteMe(userId, { password }) {
   await Form.deleteMany({ ownerId: userId });
   await RefreshToken.deleteMany({ userId });
   await User.findByIdAndDelete(userId);
+}
+
+/**
+ * Send a test email to verify transactional email delivery.
+ * @param {string} userId
+ */
+export async function sendTestEmail(userId) {
+  const user = await User.findById(userId);
+  if (!user || !user.email) {
+    throw new NotFoundError('User not found or email address missing.');
+  }
+
+  const subject = 'Test Email: Easy Forms Service Verification';
+  const text = `Hello ${user.name || 'there'},\n\nThis is a verification email from Easy Forms.\n\nMode: ${env.EMAIL_MODE}\nProvider: ${env.EMAIL_PROVIDER}\nRecipient: ${user.email}\nDate: ${new Date().toUTCString()}\n\nIf you received this message, your mail service is configured and functioning properly!\n\n— Easy Forms Team`;
+  const html = `
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; color: #292524; background-color: #FFFDF9; border: 1px solid #E7E5E4; border-radius: 16px;">
+      <div style="margin-bottom: 20px;">
+        <span style="background-color: #FFEDD5; color: #EA580C; font-weight: 700; font-size: 13px; padding: 4px 10px; border-radius: 9999px; text-transform: uppercase; letter-spacing: 0.5px;">Easy Forms</span>
+      </div>
+      <h2 style="font-size: 20px; font-weight: 700; color: #292524; margin-top: 0; margin-bottom: 8px;">Mail Service Confirmed! 🎉</h2>
+      <p style="font-size: 14px; color: #78716C; margin-top: 0; line-height: 1.5;">This is a test notification confirming that transactional email delivery is operational.</p>
+      
+      <div style="background-color: #FFFFFF; border: 1px solid #E7E5E4; border-radius: 12px; padding: 16px; margin: 20px 0;">
+        <p style="margin: 0 0 6px 0; font-size: 13px; color: #78716C;"><strong>Recipient:</strong> ${user.email}</p>
+        <p style="margin: 0 0 6px 0; font-size: 13px; color: #78716C;"><strong>Delivery Mode:</strong> <code style="font-family: monospace; background: #F5F5F4; padding: 2px 6px; border-radius: 4px;">${env.EMAIL_MODE}</code></p>
+        <p style="margin: 0; font-size: 13px; color: #78716C;"><strong>Timestamp:</strong> ${new Date().toUTCString()}</p>
+      </div>
+
+      <p style="font-size: 12px; color: #16A34A; font-weight: 600; line-height: 1.4; margin-top: 24px; border-top: 1px solid #E7E5E4; padding-top: 16px;">
+        ✓ Your email delivery channel is operational.
+      </p>
+    </div>
+  `;
+
+  const job = await sendEmailWithRetry({
+    type: 'test_email',
+    to: user.email,
+    subject,
+    html,
+    text,
+    idempotencyKey: `test_${user._id}_${Date.now()}`,
+    maxAttempts: 1,
+  });
+
+  if (!job || job.status === 'failed') {
+    throw new Error(job?.lastError || 'Failed to dispatch email via SMTP.');
+  }
+
+  return {
+    sent: true,
+    to: user.email,
+    mode: env.EMAIL_MODE,
+    provider: env.EMAIL_PROVIDER,
+  };
 }

@@ -7,6 +7,7 @@ import { env } from './config/env.js';
 import { logger } from './config/logger.js';
 import { connectDatabase, closeDatabaseConnection } from './config/database.js';
 import { createApp } from './app.js';
+import { verifyEmailTransporter } from './services/email.service.js';
 
 const app = createApp();
 let server;
@@ -20,6 +21,11 @@ async function start() {
       { port: env.PORT, env: env.NODE_ENV, version: env.APP_VERSION },
       `🚀 Easy Forms API listening on port ${env.PORT}`
     );
+  });
+
+  // Verify email transporter asynchronously on startup
+  verifyEmailTransporter().catch((err) => {
+    logger.warn({ err: err.message }, 'Initial email verification encountered an issue');
   });
 
   // Set server-level request timeout
