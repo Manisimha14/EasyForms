@@ -30,6 +30,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { QrShareModal } from '../../components/ui/QrShareModal';
+import { FormNavTabs } from '../../components/layout/FormNavTabs';
 import { AiResponseAnalystChatbot } from './AiResponseAnalystChatbot';
 
 export function AnalyticsPage() {
@@ -107,23 +108,28 @@ export function AnalyticsPage() {
   return (
     <div className="space-y-8 pb-16 animate-fade-in">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-stone-200">
         <div className="flex items-center gap-3">
           <Link
             to="/forms"
-            className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
+            className="p-2 text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-lg transition-colors"
             title="Back to forms list"
           >
             <ArrowLeft className="w-5 h-5" />
           </Link>
           <div>
-            <h1 className="text-xl font-bold text-slate-900 tracking-tight">
+            <h1 className="text-xl font-bold text-stone-900 tracking-tight">
               {form?.title || 'Form'} Analytics
             </h1>
-            <p className="text-xs text-slate-500 mt-0.5">
+            <p className="text-xs text-stone-500 mt-0.5">
               Performance metrics, submission velocity, and question insights
             </p>
           </div>
+        </div>
+
+        {/* Center: Tabs connecting Builder, Responses, and Analytics */}
+        <div className="self-start lg:self-auto">
+          <FormNavTabs formId={id} responseCount={totalResponses} />
         </div>
 
         {/* Right controls: Share & QR + Range Switch */}
@@ -135,7 +141,7 @@ export function AnalyticsPage() {
             className="flex items-center gap-1.5 border-stone-200 text-stone-700 hover:text-stone-900 hover:bg-stone-50"
             title="Share form and view QR Code"
           >
-            <Share2 className="w-4 h-4 text-primary-500" />
+            <Share2 className="w-4 h-4 text-orange-500" />
             <span>Share & QR</span>
           </Button>
 
@@ -148,7 +154,7 @@ export function AnalyticsPage() {
                 onClick={() => setRange(r)}
                 className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
                   range === r
-                    ? 'bg-white text-stone-900 shadow-sm'
+                    ? 'bg-white text-stone-900 shadow-2xs'
                     : 'text-stone-600 hover:text-stone-900'
                 }`}
               >

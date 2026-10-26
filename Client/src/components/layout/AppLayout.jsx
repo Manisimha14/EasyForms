@@ -3,6 +3,7 @@ import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
   FileText,
+  BarChart3,
   User,
   LogOut,
   Menu,
@@ -28,6 +29,7 @@ export function AppLayout({ onOpenCreateForm }) {
   const navItems = [
     { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
     { label: 'My Forms', path: '/forms', icon: FileText },
+    { label: 'Analytics', path: '/analytics', icon: BarChart3 },
     { label: 'Account', path: '/account', icon: User },
   ];
 

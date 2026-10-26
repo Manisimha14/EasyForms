@@ -14,6 +14,7 @@ import { AccountPage } from './features/account/AccountPage';
 import { FormBuilderPage } from './features/builder/FormBuilderPage';
 import { ResponsesPage } from './features/responses/ResponsesPage';
 import { AnalyticsPage } from './features/analytics/AnalyticsPage';
+import { GlobalAnalyticsPage } from './features/analytics/GlobalAnalyticsPage';
 
 /* ── Public pages ── */
 import { PublicFormPage } from './features/public-form/PublicFormPage';
@@ -78,6 +79,7 @@ export default function App() {
         <Route path="/forms/:formId/responses" element={<ResponsesPage />} />
         <Route path="/forms/:id/analytics" element={<AnalyticsPage />} />
         <Route path="/forms/:formId/analytics" element={<AnalyticsPage />} />
+        <Route path="/analytics" element={<GlobalAnalyticsPage />} />
         <Route path="/account" element={<AccountPage />} />
       </Route>
 

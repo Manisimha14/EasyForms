@@ -8,6 +8,7 @@ import { Dialog } from '../../components/ui/Dialog';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { Skeleton } from '../../components/ui/Skeleton';
 import { QrShareModal } from '../../components/ui/QrShareModal';
+import { FormNavTabs } from '../../components/layout/FormNavTabs';
 import { AiResponseAnalystChatbot } from '../analytics/AiResponseAnalystChatbot';
 import { formatDateTime, truncate } from '../../lib/format';
 import {
@@ -184,23 +185,28 @@ export function ResponsesPage() {
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-stone-200">
         <div className="flex items-center gap-3">
           <Link
             to="/forms"
-            className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
+            className="p-2 text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-lg transition-colors"
             title="Back to forms list"
           >
             <ArrowLeft className="w-5 h-5" />
           </Link>
           <div>
-            <h1 className="text-xl font-bold text-slate-900 tracking-tight">
+            <h1 className="text-xl font-bold text-stone-900 tracking-tight">
               {form?.title || 'Form'} Responses
             </h1>
-            <p className="text-xs text-slate-500 mt-0.5">
+            <p className="text-xs text-stone-500 mt-0.5">
               {pagination.total} {pagination.total === 1 ? 'submission' : 'submissions'} collected
             </p>
           </div>
+        </div>
+
+        {/* Center: Tabs connecting Builder, Responses, and Analytics */}
+        <div className="self-start lg:self-auto">
+          <FormNavTabs formId={id} responseCount={pagination.total} />
         </div>
 
         <div className="flex items-center gap-2">

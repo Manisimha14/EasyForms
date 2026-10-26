@@ -17,6 +17,7 @@ import { TemplatePickerModal } from './TemplatePickerModal';
 import { ThemeTab } from './ThemeTab';
 import { SettingsTab } from './SettingsTab';
 import { QrShareModal } from '../../components/ui/QrShareModal';
+import { FormNavTabs } from '../../components/layout/FormNavTabs';
 import { LIMITS } from '../../lib/constants';
 import {
   Save,
@@ -567,6 +568,11 @@ export function FormBuilderPage() {
               {fields.length} / {LIMITS.FIELDS_MAX} questions • Visibility: {form?.visibility}
             </p>
           </div>
+        </div>
+
+        {/* Center: Navigation Tabs connecting Builder, Responses, and Analytics */}
+        <div className="self-start sm:self-center">
+          <FormNavTabs formId={id} responseCount={form?.responseCount} />
         </div>
 
         {/* Right Side Actions: AI Generate, Templates, Live Preview, Save, Publish/Unpublish, Share */}
