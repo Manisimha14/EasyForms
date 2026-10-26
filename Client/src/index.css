@@ -33,3 +33,57 @@
 ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
+
+/* Landing Page Animations & Blueprint Utilities */
+@keyframes floatSlow {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-10px) rotate(1deg); }
+}
+@keyframes floatAlt {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-12px) rotate(-1.5deg); }
+}
+@keyframes orbDrift {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(30px, -20px) scale(1.08); }
+  66% { transform: translate(-20px, 15px) scale(0.95); }
+}
+@keyframes pathDraw {
+  0% { stroke-dashoffset: 700; }
+  100% { stroke-dashoffset: 0; }
+}
+@keyframes cursorBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+@keyframes livePulseGlow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0.45); }
+  50% { box-shadow: 0 0 0 8px rgba(249, 115, 22, 0); }
+}
+
+.animate-float-slow { animation: floatSlow 5s ease-in-out infinite; }
+.animate-float-alt { animation: floatAlt 6s ease-in-out infinite; }
+.animate-orb-1 { animation: orbDrift 14s ease-in-out infinite; }
+.animate-orb-2 { animation: orbDrift 18s ease-in-out infinite reverse; }
+.chart-path-anim {
+  stroke-dasharray: 700;
+  stroke-dashoffset: 700;
+  animation: pathDraw 2.4s cubic-bezier(0.16, 1, 0.3, 1) forwards 0.4s;
+}
+.typing-cursor { animation: cursorBlink 1s infinite; }
+.live-glow-pulse { animation: livePulseGlow 2.2s infinite; }
+
+.noise-bg {
+  background-image: radial-gradient(rgba(140, 113, 100, 0.08) 1px, transparent 0);
+  background-size: 24px 24px;
+}
+
+.magnetic-btn {
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease;
+}
+
+.tilt-card {
+  transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.45s ease;
+  transform-style: preserve-3d;
+}
+

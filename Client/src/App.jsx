@@ -15,6 +15,7 @@ import { FormBuilderPage } from './features/builder/FormBuilderPage';
 import { ResponsesPage } from './features/responses/ResponsesPage';
 import { AnalyticsPage } from './features/analytics/AnalyticsPage';
 import { GlobalAnalyticsPage } from './features/analytics/GlobalAnalyticsPage';
+import { LandingPage } from './features/landing/LandingPage';
 
 /* ── Public pages ── */
 import { PublicFormPage } from './features/public-form/PublicFormPage';
@@ -83,8 +84,8 @@ export default function App() {
         <Route path="/account" element={<AccountPage />} />
       </Route>
 
-      {/* ── Root redirect ── */}
-      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+      {/* ── Public Landing Page ── */}
+      <Route path="/" element={<LandingPage />} />
 
       {/* ── 404 catch-all ── */}
       <Route path="*" element={<NotFound />} />
