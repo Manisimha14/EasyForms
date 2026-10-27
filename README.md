@@ -12,6 +12,17 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-f97316?style=flat-square)](LICENSE)
 
 ---
+### 🔗 Quick Links
+
+| Resource | Link |
+|---|---|
+| **🎬 Project Demo** | (https://drive.google.com/file/d/1OawbC_7G23cX-ZXhbq8OBKBoU6TqIhfI/view?usp=sharing) |
+| **🚀 Live Application** | (https://easyforms-beta.vercel.app) |
+| **⚙️ Backend API** | (https://easyforms-ofk0.onrender.com/api/v1) |
+| **📖 Interactive API Docs** | (https://easyforms-ofk0.onrender.com/api-docs) |
+| **💚 Health Check** |(https://easyforms-ofk0.onrender.com/api/v1/health) |
+
+---
 
 ## Problem Statement
 
