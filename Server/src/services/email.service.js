@@ -74,7 +74,9 @@ async function sendViaResendApi({ to, subject, html, text }) {
  * Never blocked on Render Free tier.
  */
 async function sendViaBrevoApi({ to, subject, html, text }) {
-  const senderEmail = env.SMTP_USER || 'noreply@easyforms.app';
+  const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/;
+  const match = (env.EMAIL_FROM && env.EMAIL_FROM.match(emailRegex)) || (env.SMTP_USER && env.SMTP_USER.match(emailRegex));
+  const senderEmail = match ? match[0] : (env.SMTP_USER || 'noreply@easyforms.app');
   const res = await fetch('https://api.brevo.com/v3/smtp/email', {
     method: 'POST',
     headers: {

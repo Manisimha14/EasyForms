@@ -280,24 +280,23 @@ export async function sendTestEmail(userId) {
     throw new NotFoundError('User not found or email address missing.');
   }
 
-  const subject = 'Test Email: Easy Forms Service Verification';
-  const text = `Hello ${user.name || 'there'},\n\nThis is a verification email from Easy Forms.\n\nMode: ${env.EMAIL_MODE}\nProvider: ${env.EMAIL_PROVIDER}\nRecipient: ${user.email}\nDate: ${new Date().toUTCString()}\n\nIf you received this message, your mail service is configured and functioning properly!\n\n— Easy Forms Team`;
+  const subject = 'Easy Forms: Notification Service Verification';
+  const text = `Hello ${user.name || 'there'},\n\nThis is a verification email confirming that email notifications for your Easy Forms account are working properly.\n\nRecipient: ${user.email}\nDate: ${new Date().toUTCString()}\n\n— Easy Forms Team`;
   const html = `
     <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; color: #292524; background-color: #FFFDF9; border: 1px solid #E7E5E4; border-radius: 16px;">
       <div style="margin-bottom: 20px;">
         <span style="background-color: #FFEDD5; color: #EA580C; font-weight: 700; font-size: 13px; padding: 4px 10px; border-radius: 9999px; text-transform: uppercase; letter-spacing: 0.5px;">Easy Forms</span>
       </div>
-      <h2 style="font-size: 20px; font-weight: 700; color: #292524; margin-top: 0; margin-bottom: 8px;">Mail Service Confirmed! 🎉</h2>
-      <p style="font-size: 14px; color: #78716C; margin-top: 0; line-height: 1.5;">This is a test notification confirming that transactional email delivery is operational.</p>
+      <h2 style="font-size: 20px; font-weight: 700; color: #292524; margin-top: 0; margin-bottom: 8px;">Email Notifications Working! 🎉</h2>
+      <p style="font-size: 14px; color: #78716C; margin-top: 0; line-height: 1.5;">This confirms that email notifications and respondent receipts for your forms are configured and ready.</p>
       
       <div style="background-color: #FFFFFF; border: 1px solid #E7E5E4; border-radius: 12px; padding: 16px; margin: 20px 0;">
         <p style="margin: 0 0 6px 0; font-size: 13px; color: #78716C;"><strong>Recipient:</strong> ${user.email}</p>
-        <p style="margin: 0 0 6px 0; font-size: 13px; color: #78716C;"><strong>Delivery Mode:</strong> <code style="font-family: monospace; background: #F5F5F4; padding: 2px 6px; border-radius: 4px;">${env.EMAIL_MODE}</code></p>
-        <p style="margin: 0; font-size: 13px; color: #78716C;"><strong>Timestamp:</strong> ${new Date().toUTCString()}</p>
+        <p style="margin: 0; font-size: 13px; color: #78716C;"><strong>Verified At:</strong> ${new Date().toUTCString()}</p>
       </div>
 
       <p style="font-size: 12px; color: #16A34A; font-weight: 600; line-height: 1.4; margin-top: 24px; border-top: 1px solid #E7E5E4; padding-top: 16px;">
-        ✓ Your email delivery channel is operational.
+        ✓ Your email notifications are configured and operational.
       </p>
     </div>
   `;

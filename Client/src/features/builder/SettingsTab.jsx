@@ -107,12 +107,12 @@ export function SettingsTab({ form, onSaveMetadata, isSaving }) {
       const res = await authApi.sendTestEmail();
       setTestEmailResult({
         success: true,
-        message: `Test email sent to ${res.data?.to || 'your email'}! (Mode: ${res.data?.mode || 'smtp'})`,
+        message: `Test email successfully sent to ${res.data?.to || 'your registered email'}!`,
       });
     } catch (err) {
       setTestEmailResult({
         success: false,
-        message: err.message || 'Failed to send test email. Please verify SMTP credentials on the server.',
+        message: err.message || 'Failed to send test email. Please check your email configuration.',
       });
     } finally {
       setTestEmailLoading(false);
@@ -568,26 +568,37 @@ export function SettingsTab({ form, onSaveMetadata, isSaving }) {
 
               {respondentReceipt && (
                 <div className="pt-2 pl-6.5 space-y-2">
-                  <label className="text-xs font-semibold text-stone-700 block">
-                    Recipient Email Field:
-                  </label>
-                  {emailFields.length > 0 ? (
-                    <select
-                      value={respondentEmailFieldId}
-                      onChange={(e) => setRespondentEmailFieldId(e.target.value)}
-                      className="px-3 py-2 text-sm bg-white border border-stone-300 rounded-lg text-stone-900 focus:outline-none focus:ring-2 focus:ring-primary-500"
-                    >
-                      <option value="">Auto-detect from first email question</option>
-                      {emailFields.map((f) => (
-                        <option key={f.id} value={f.id}>
-                          {f.label}
-                        </option>
-                      ))}
-                    </select>
+                  {emailFields.length === 0 ? (
+                    <div className="flex items-start gap-2 text-xs text-amber-800 bg-amber-50 p-2.5 rounded-lg border border-amber-200 leading-normal">
+                      <span className="text-sm shrink-0">💡</span>
+                      <span>
+                        <strong>No email question found:</strong> Add an &ldquo;Email&rdquo; question to your form so respondents can provide their email address.
+                      </span>
+                    </div>
+                  ) : emailFields.length === 1 ? (
+                    <div className="flex items-center gap-2 text-xs text-stone-700 bg-stone-100/90 px-3 py-2.5 rounded-lg border border-stone-200">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <span>
+                        Receipts will automatically be sent to the email entered in: <strong className="text-stone-900">&ldquo;{emailFields[0].label || 'Email'}&rdquo;</strong>
+                      </span>
+                    </div>
                   ) : (
-                    <p className="text-xs text-amber-700 bg-amber-50 p-2.5 rounded-lg border border-amber-200">
-                      💡 Tip: Add an "Email" question to your form so respondents can provide their email address.
-                    </p>
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-stone-700 block">
+                        Send receipt to which question&apos;s answer?
+                      </label>
+                      <select
+                        value={respondentEmailFieldId || emailFields[0].id}
+                        onChange={(e) => setRespondentEmailFieldId(e.target.value)}
+                        className="px-3 py-2 text-sm bg-white border border-stone-300 rounded-lg text-stone-900 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                      >
+                        {emailFields.map((f) => (
+                          <option key={f.id} value={f.id}>
+                            {f.label || 'Email question'}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                   )}
                 </div>
               )}
@@ -617,10 +628,10 @@ export function SettingsTab({ form, onSaveMetadata, isSaving }) {
                 <div>
                   <span className="text-xs font-bold text-stone-900 flex items-center gap-1.5">
                     <Sparkles className="w-3.5 h-3.5 text-primary-600" />
-                    Verify Production Mail Service
+                    Test Email Notifications
                   </span>
                   <p className="text-[11px] text-stone-500 mt-0.5">
-                    Test your backend SMTP setup by sending a verification email to your signed-in account.
+                    Send a sample verification email to your account to confirm delivery is working.
                   </p>
                 </div>
                 <Button
@@ -652,10 +663,6 @@ export function SettingsTab({ form, onSaveMetadata, isSaving }) {
                   <span>{testEmailResult.message}</span>
                 </div>
               )}
-
-              <p className="text-[11px] text-stone-400 bg-white/70 p-2 rounded border border-orange-100 leading-normal">
-                💡 <strong>Render Free Tier Note:</strong> Render blocks outbound SMTP ports 25, 465, and 587. To send emails on Render Free tier, add a free <code className="bg-stone-100 px-1 py-0.5 rounded font-mono text-primary-700">RESEND_API_KEY</code> from <a href="https://resend.com" target="_blank" rel="noreferrer" className="underline font-semibold text-primary-600">resend.com</a> in your Render environment variables.
-              </p>
             </div>
           </div>
         </Card>
