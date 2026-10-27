@@ -156,6 +156,30 @@ export function buildAnswerSchema(field) {
       break;
     }
 
+    case 'file_upload': {
+      schema = z.union([
+        z.string().max(20000000, 'File attachment exceeds maximum size limit.'),
+        z.object({
+          name: z.string().max(255).optional(),
+          size: z.number().nonnegative().optional(),
+          type: z.string().max(120).optional(),
+          dataUrl: z.string().max(20000000).optional(),
+          url: z.string().max(2000).optional(),
+        }).passthrough(),
+      ]);
+      if (field.required) {
+        schema = schema.refine(
+          (val) => {
+            if (!val) return false;
+            if (typeof val === 'string') return val.trim().length > 0;
+            return Boolean(val.url || val.dataUrl || val.name);
+          },
+          { message: 'Please upload a file.' }
+        );
+      }
+      break;
+    }
+
     default:
       schema = z.any();
   }

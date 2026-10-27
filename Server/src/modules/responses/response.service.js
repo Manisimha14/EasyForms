@@ -153,6 +153,9 @@ export async function exportResponsesCsv(userId, formId, query) {
         row.push(val.join(' ;  '));
       } else if (typeof val === 'boolean') {
         row.push(String(val));
+      } else if (typeof val === 'object') {
+        // File upload / attachment object
+        row.push(val.name ? `${val.name}${val.size ? ` (${Math.round(val.size / 1024)} KB)` : ''}` : JSON.stringify(val));
       } else {
         row.push(val);
       }

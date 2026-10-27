@@ -14,6 +14,7 @@ import {
   Plus,
   Layers,
   Sparkles,
+  Upload,
 } from 'lucide-react';
 import { LIMITS } from '../../lib/constants';
 
@@ -45,6 +46,7 @@ export const QUESTION_CATEGORIES = [
       { id: 'number', label: 'Number', icon: Hash, description: 'Numeric values & ranges' },
       { id: 'date', label: 'Date', icon: Calendar, description: 'Date picker' },
       { id: 'rating', label: 'Rating', icon: Star, description: 'Star rating scale' },
+      { id: 'file_upload', label: 'File Upload', icon: Upload, description: 'Resumes, images, or PDFs' },
     ],
   },
 ];

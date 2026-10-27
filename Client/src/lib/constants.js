@@ -15,6 +15,7 @@ export const QUESTION_TYPES = [
   { id: 'dropdown', label: 'Dropdown', description: 'Select dropdown menu' },
   { id: 'rating', label: 'Rating', description: 'Scale rating from 1 to 10' },
   { id: 'date', label: 'Date', description: 'Date picker with min/max range' },
+  { id: 'file_upload', label: 'File Upload', description: 'Upload resumes, images, or PDF documents' },
 ];
 
 export const ALLOWED_FONT_FAMILIES = [

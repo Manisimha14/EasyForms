@@ -19,6 +19,7 @@ import {
   Calendar,
   SlidersHorizontal,
   Check,
+  Upload,
 } from 'lucide-react';
 import { Input } from '../../components/ui/Input';
 import { QUESTION_TYPES, LIMITS } from '../../lib/constants';
@@ -35,6 +36,7 @@ const typeIcons = {
   dropdown: ListFilter,
   rating: Star,
   date: Calendar,
+  file_upload: Upload,
 };
 
 export function QuestionEditor({
@@ -69,6 +71,9 @@ export function QuestionEditor({
 
     if (newType === 'rating') {
       updated.validation = { min: 1, max: 5 };
+    }
+    if (newType === 'file_upload') {
+      updated.validation = { maxSizeMb: 5 };
     }
 
     onChange(updated);
@@ -121,7 +126,8 @@ export function QuestionEditor({
       field.validation?.min !== undefined ||
       field.validation?.max !== undefined ||
       field.validation?.minDate ||
-      field.validation?.maxDate
+      field.validation?.maxDate ||
+      field.validation?.maxSizeMb
   );
 
   return (
@@ -157,6 +163,7 @@ export function QuestionEditor({
                 <option value="number">Number</option>
                 <option value="date">Date</option>
                 <option value="rating">Rating</option>
+                <option value="file_upload">File Upload</option>
               </optgroup>
             </select>
             <Icon className="w-3.5 h-3.5 text-orange-600 absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none" />
@@ -477,6 +484,27 @@ export function QuestionEditor({
                     onChange={(e) => updateValidation('maxDate', e.target.value)}
                     className="w-full px-2.5 py-1.5 text-xs bg-stone-50 border border-stone-200 rounded-xl text-stone-800 focus:bg-white focus:outline-none focus:border-orange-400"
                   />
+                </div>
+              </div>
+            )}
+
+            {field.type === 'file_upload' && (
+              <div className="flex flex-wrap items-center gap-3 pt-1">
+                <div className="w-36">
+                  <label className="text-2xs font-semibold uppercase tracking-wider text-stone-500 block mb-1">
+                    Max File Size
+                  </label>
+                  <select
+                    value={field.validation?.maxSizeMb ?? 5}
+                    onChange={(e) => updateValidation('maxSizeMb', parseInt(e.target.value, 10))}
+                    className="w-full px-3 py-1.5 text-xs bg-stone-50 border border-stone-200 rounded-xl text-stone-800 focus:bg-white focus:outline-none focus:border-orange-400"
+                  >
+                    {[2, 5, 10, 20].map((mb) => (
+                      <option key={mb} value={mb}>
+                        Up to {mb} MB
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
             )}

@@ -194,7 +194,12 @@ export function FormBuilderPage() {
       options: ['single_select', 'multi_select', 'dropdown'].includes(type)
         ? ['Option 1', 'Option 2']
         : undefined,
-      validation: type === 'rating' ? { min: 1, max: 5 } : {},
+      validation:
+        type === 'rating'
+          ? { min: 1, max: 5 }
+          : type === 'file_upload'
+          ? { maxSizeMb: 5 }
+          : {},
     };
 
     setFields([...fields, newField]);

@@ -6,6 +6,7 @@ import { Button } from '../../components/ui/Button';
 import { Banner } from '../../components/ui/Banner';
 import { UserPlus, Eye, EyeOff, Check, X, ArrowRight } from 'lucide-react';
 import { LIMITS } from '../../lib/constants';
+import { PixelLogo } from '../../components/ui/PixelLogo';
 
 export function RegisterPage() {
   const { register } = useAuth();
@@ -66,9 +67,7 @@ export function RegisterPage() {
       <div className="w-full max-w-md bg-white border border-slate-200/90 rounded-2xl p-8 shadow-card">
         {/* Brand Header */}
         <div className="flex flex-col items-center text-center mb-8">
-          <div className="w-12 h-12 rounded-2xl bg-primary-600 flex items-center justify-center text-white font-bold text-xl mb-4 shadow-sm">
-            EF
-          </div>
+          <PixelLogo size={52} className="mb-4 shadow-sm" />
           <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
             Create an account
           </h1>

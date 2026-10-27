@@ -94,6 +94,10 @@ export function createApp() {
         if (!origin || allowedOrigins.includes('*') || allowedOrigins.includes(origin)) {
           return callback(null, true);
         }
+        // Always allow local development origins (localhost & 127.0.0.1 on any port)
+        if (/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) {
+          return callback(null, true);
+        }
         // Allow Vercel preview & production deployments if vercel.app is permitted
         const isVercelAllowed = allowedOrigins.some(
           (o) => o.includes('vercel.app') && origin.endsWith('.vercel.app')

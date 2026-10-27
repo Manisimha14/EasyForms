@@ -220,6 +220,21 @@ const dateFieldSchema = z
   })
   .strict();
 
+const fileUploadFieldSchema = z
+  .object({
+    ...baseFieldSchema,
+    type: z.literal('file_upload'),
+    options: z.undefined().optional(),
+    validation: z
+      .object({
+        maxSizeMb: z.number().positive().max(25).default(5).optional(),
+        allowedExtensions: z.array(z.string()).optional(),
+      })
+      .strict()
+      .optional(),
+  })
+  .strict();
+
 export const singleFieldSchema = z.discriminatedUnion('type', [
   shortTextFieldSchema,
   longTextFieldSchema,
@@ -232,6 +247,7 @@ export const singleFieldSchema = z.discriminatedUnion('type', [
   dropdownFieldSchema,
   ratingFieldSchema,
   dateFieldSchema,
+  fileUploadFieldSchema,
 ]);
 
 // Full replacement fields schema (PUT /forms/:id/fields)

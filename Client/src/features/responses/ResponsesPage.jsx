@@ -22,6 +22,7 @@ import {
   CheckCircle,
   FileSpreadsheet,
   QrCode,
+  Paperclip,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -158,6 +159,15 @@ export function ResponsesPage() {
           }`}
         >
           {val ? 'Yes' : 'No'}
+        </span>
+      );
+    }
+
+    if (typeof val === 'object' && val !== null && (val.name || val.dataUrl || val.url)) {
+      return (
+        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-orange-50 border border-orange-200 text-xs font-medium text-orange-900">
+          <Paperclip className="w-3 h-3 text-orange-600 shrink-0" />
+          <span className="truncate max-w-[130px]">{val.name || 'Attachment'}</span>
         </span>
       );
     }
@@ -374,6 +384,36 @@ export function ResponsesPage() {
                 <div className="text-sm font-medium text-slate-900 whitespace-pre-wrap">
                   {val === undefined || val === null ? (
                     <span className="text-slate-400 italic">No answer provided</span>
+                  ) : typeof val === 'object' && val !== null && (val.name || val.dataUrl || val.url) ? (
+                    <div className="space-y-3 pt-1">
+                      {val.type?.startsWith('image/') && (val.dataUrl || val.url) && (
+                        <div className="rounded-xl overflow-hidden border border-slate-200 bg-white max-w-sm shadow-xs">
+                          <img
+                            src={val.dataUrl || val.url}
+                            alt={val.name || 'Attachment Preview'}
+                            className="w-full max-h-56 object-contain bg-slate-50"
+                          />
+                        </div>
+                      )}
+                      <div>
+                        <a
+                          href={val.dataUrl || val.url}
+                          download={val.name || 'attachment'}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-orange-50 hover:bg-orange-100 border border-orange-200 text-orange-950 text-xs font-semibold transition-colors shadow-2xs"
+                        >
+                          <Paperclip className="w-3.5 h-3.5 text-orange-600" />
+                          <span>Download {val.name || 'File'}</span>
+                          {val.size && (
+                            <span className="text-orange-700/70 font-normal">
+                              ({(val.size / 1024 / 1024).toFixed(2)} MB)
+                            </span>
+                          )}
+                          <Download className="w-3.5 h-3.5 text-orange-600 ml-1" />
+                        </a>
+                      </div>
+                    </div>
                   ) : typeof val === 'boolean' ? (
                     val ? 'Yes' : 'No'
                   ) : Array.isArray(val) ? (

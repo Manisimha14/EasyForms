@@ -18,6 +18,9 @@ import {
   Sparkles,
   Calendar,
   Lock,
+  Upload,
+  FileText,
+  X,
 } from 'lucide-react';
 
 export function PublicFormPage() {
@@ -33,6 +36,10 @@ export function PublicFormPage() {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isUnavailable, setIsUnavailable] = useState(false);
   const [rateLimitCountdown, setRateLimitCountdown] = useState(null);
+  const [draftRestored, setDraftRestored] = useState(false);
+  const [draftLastSaved, setDraftLastSaved] = useState(null);
+
+  const draftStorageKey = `easyforms_draft_${slug}`;
 
   // Load public form
   const fetchForm = useCallback(async () => {
@@ -49,7 +56,24 @@ export function PublicFormPage() {
             initial[f.id] = [];
           }
         });
-        setAnswers((prev) => (Object.keys(prev).length > 0 ? prev : initial));
+
+        // Restore draft from localStorage if present
+        try {
+          const saved = localStorage.getItem(`easyforms_draft_${slug}`);
+          if (saved) {
+            const parsed = JSON.parse(saved);
+            if (parsed && typeof parsed === 'object' && Object.keys(parsed).length > 0) {
+              setAnswers({ ...initial, ...parsed });
+              setDraftRestored(true);
+            } else {
+              setAnswers(initial);
+            }
+          } else {
+            setAnswers(initial);
+          }
+        } catch {
+          setAnswers(initial);
+        }
       }
     } catch (err) {
       if (err.status === 404) {
@@ -65,6 +89,69 @@ export function PublicFormPage() {
   useEffect(() => {
     fetchForm();
   }, [fetchForm]);
+
+  // Auto-save draft to localStorage whenever answers change
+  useEffect(() => {
+    if (!form || !slug || isSubmitted || Object.keys(answers).length === 0) return;
+    try {
+      localStorage.setItem(draftStorageKey, JSON.stringify(answers));
+      setDraftLastSaved(Date.now());
+    } catch {
+      // Ignore storage quota limits
+    }
+  }, [answers, form, slug, isSubmitted, draftStorageKey]);
+
+  // Reset/clear restored draft
+  const handleClearDraft = () => {
+    try {
+      localStorage.removeItem(draftStorageKey);
+    } catch {
+      // Ignore
+    }
+    const initial = {};
+    (form?.fields || []).forEach((f) => {
+      if (f.type === 'multi_select') {
+        initial[f.id] = [];
+      }
+    });
+    setAnswers(initial);
+    setDraftRestored(false);
+    setDraftLastSaved(null);
+  };
+
+  // Handle file uploads (converts file to base64 Data URL)
+  const handleFileUpload = (field, e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const maxSizeMb = field.validation?.maxSizeMb || 5;
+    const maxSizeBytes = maxSizeMb * 1024 * 1024;
+
+    if (file.size > maxSizeBytes) {
+      setErrors((prev) => ({
+        ...prev,
+        [field.id]: `File size exceeds the ${maxSizeMb} MB limit.`,
+      }));
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      handleAnswerChange(field.id, {
+        name: file.name,
+        size: file.size,
+        type: file.type,
+        dataUrl: reader.result,
+      });
+    };
+    reader.onerror = () => {
+      setErrors((prev) => ({
+        ...prev,
+        [field.id]: 'Failed to read file. Please try another file.',
+      }));
+    };
+    reader.readAsDataURL(file);
+  };
 
   // Rate limit countdown effect
   useEffect(() => {
@@ -111,7 +198,8 @@ export function PublicFormPage() {
         val === undefined ||
         val === null ||
         val === '' ||
-        (Array.isArray(val) && val.length === 0);
+        (Array.isArray(val) && val.length === 0) ||
+        (field.type === 'file_upload' && (!val || (!val.dataUrl && !val.url)));
 
       if (field.required && isEmpty) {
         setErrors((prev) => ({
@@ -148,6 +236,11 @@ export function PublicFormPage() {
       const res = await publicApi.submitResponse(slug, formattedAnswers);
       if (res.success) {
         setIsSubmitted(true);
+        try {
+          localStorage.removeItem(draftStorageKey);
+        } catch {
+          // Ignore
+        }
         // Trigger celebratory confetti animation!
         try {
           confetti({
@@ -453,6 +546,25 @@ export function PublicFormPage() {
           </div>
         )}
 
+        {/* Draft Restored Banner */}
+        {draftRestored && (
+          <div className="flex items-center justify-between p-3.5 mb-6 bg-orange-50 border border-orange-200 rounded-xl text-xs text-orange-950 animate-fade-in shadow-xs">
+            <div className="flex items-center gap-2 min-w-0">
+              <Sparkles className="w-4 h-4 text-orange-600 shrink-0" />
+              <span>
+                <strong>Draft restored:</strong> Your previous progress was recovered automatically.
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={handleClearDraft}
+              className="text-xs font-semibold text-orange-700 hover:text-orange-900 underline shrink-0 ml-3 cursor-pointer"
+            >
+              Clear draft
+            </button>
+          </div>
+        )}
+
         {/* Questions Form */}
         <form onSubmit={handleSubmit} className="space-y-5">
           {(form?.fields || []).map((field, idx) => {
@@ -716,6 +828,65 @@ export function PublicFormPage() {
                   />
                 )}
 
+                {/* 12. file_upload */}
+                {field.type === 'file_upload' && (
+                  <div>
+                    {val && (val.dataUrl || val.url || val.name) ? (
+                      <div className="flex items-center justify-between p-3.5 bg-orange-50/60 border border-orange-200 rounded-xl">
+                        <div className="flex items-center gap-3 min-w-0">
+                          {val.type?.startsWith('image/') && val.dataUrl ? (
+                            <img
+                              src={val.dataUrl}
+                              alt="preview"
+                              className="w-10 h-10 object-cover rounded-lg border border-orange-200 shrink-0"
+                            />
+                          ) : (
+                            <div className="w-10 h-10 rounded-lg bg-orange-100 flex items-center justify-center text-orange-600 shrink-0">
+                              <FileText className="w-5 h-5" />
+                            </div>
+                          )}
+                          <div className="min-w-0">
+                            <p className="text-xs font-semibold text-stone-900 truncate">
+                              {val.name || 'Uploaded File'}
+                            </p>
+                            {val.size && (
+                              <p className="text-[11px] text-stone-500">
+                                {(val.size / 1024 / 1024).toFixed(2)} MB
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleAnswerChange(field.id, null)}
+                          className="p-1.5 text-stone-400 hover:text-rose-600 rounded-lg hover:bg-white transition-colors"
+                          title="Remove file"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ) : (
+                      <label className="flex flex-col items-center justify-center border-2 border-dashed border-stone-200 hover:border-orange-400 rounded-xl p-6 bg-stone-50/50 hover:bg-orange-50/20 cursor-pointer transition-colors group">
+                        <input
+                          type="file"
+                          className="hidden"
+                          accept={field.validation?.allowedExtensions?.join(',') || 'image/*,.pdf,.doc,.docx,.txt'}
+                          onChange={(e) => handleFileUpload(field, e)}
+                        />
+                        <div className="w-10 h-10 rounded-xl bg-orange-100 flex items-center justify-center text-orange-600 mb-2 group-hover:scale-105 transition-transform">
+                          <Upload className="w-5 h-5" />
+                        </div>
+                        <p className="text-xs font-semibold text-stone-800">
+                          Click to upload or drag and drop
+                        </p>
+                        <p className="text-[11px] text-stone-400 mt-0.5">
+                          PDF, Word, or Images up to {field.validation?.maxSizeMb || 5} MB
+                        </p>
+                      </label>
+                    )}
+                  </div>
+                )}
+
                 {/* Error message */}
                 {error && (
                   <p className="text-xs text-rose-600 font-semibold animate-fade-in flex items-center gap-1 mt-1">
@@ -752,6 +923,12 @@ export function PublicFormPage() {
                 </>
               )}
             </button>
+            {draftLastSaved && !isSubmitted && (
+              <p className="text-center text-xs text-stone-400 mt-2.5 flex items-center justify-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                Draft saved locally — progress won't be lost
+              </p>
+            )}
           </div>
         </form>
       </div>

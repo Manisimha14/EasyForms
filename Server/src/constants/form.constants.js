@@ -24,6 +24,7 @@ export const QUESTION_TYPES = Object.freeze([
   'dropdown',
   'rating',
   'date',
+  'file_upload',
 ]);
 
 export const SELECTION_TYPES = Object.freeze([

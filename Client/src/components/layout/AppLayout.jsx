@@ -14,6 +14,7 @@ import {
 import { useAuth } from '../../auth/AuthProvider';
 import { Button } from '../ui/Button';
 import { Banner } from '../ui/Banner';
+import { PixelLogo } from '../ui/PixelLogo';
 
 export function AppLayout({ onOpenCreateForm }) {
   const { user, logout, isWakingUp } = useAuth();
@@ -39,9 +40,7 @@ export function AppLayout({ onOpenCreateForm }) {
       <aside className="hidden md:flex flex-col w-64 bg-white border-r border-stone-200 shrink-0">
         <div className="p-6 border-b border-stone-100 flex items-center justify-between">
           <NavLink to="/dashboard" className="flex items-center gap-3 group">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center text-white font-bold text-base shadow-sm shadow-orange-500/20 group-hover:scale-105 transition-transform">
-              EF
-            </div>
+            <PixelLogo size={38} className="group-hover:scale-105 transition-transform" />
             <div>
               <span className="font-bold text-stone-900 tracking-tight text-base block leading-none">
                 Easy Forms
@@ -114,9 +113,7 @@ export function AppLayout({ onOpenCreateForm }) {
       {/* Mobile Top Header */}
       <header className="md:hidden bg-white/95 backdrop-blur-md border-b border-stone-200 px-4 py-3 flex items-center justify-between sticky top-0 z-30">
         <NavLink to="/dashboard" className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center text-white font-bold text-sm shadow-xs">
-            EF
-          </div>
+          <PixelLogo size={28} />
           <span className="font-bold text-stone-900 text-sm tracking-tight">Easy Forms</span>
         </NavLink>
 

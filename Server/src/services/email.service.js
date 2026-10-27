@@ -39,6 +39,77 @@ export function isValidEmail(email) {
 }
 
 /**
+ * Escape HTML characters to safely render user-submitted text in email templates.
+ */
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+/**
+ * Format an answer value into a clean human-readable string.
+ */
+function formatAnswerValue(value) {
+  if (value === null || value === undefined || value === '') {
+    return '—';
+  }
+  if (typeof value === 'object' && !Array.isArray(value)) {
+    if (value.name) {
+      const sizeStr = value.size ? ` (${(value.size / 1024).toFixed(1)} KB)` : '';
+      return `📎 ${value.name}${sizeStr}`;
+    }
+    return JSON.stringify(value);
+  }
+  if (Array.isArray(value)) {
+    return value.length > 0 ? value.join(', ') : '—';
+  }
+  if (typeof value === 'boolean') {
+    return value ? 'Yes' : 'No';
+  }
+  if (typeof value === 'string' && value.startsWith('data:')) {
+    return '📎 Attached file';
+  }
+  return String(value);
+}
+
+/**
+ * Pixelated retro-modern SVG logo for email headers.
+ */
+const EMAIL_PIXEL_LOGO_SVG = `
+<svg width="34" height="34" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" style="image-rendering: pixelated; shape-rendering: crispEdges; display: inline-block; vertical-align: middle; border-radius: 6px; margin-right: 8px;">
+  <!-- Outer Pixel Base -->
+  <rect x="4" y="0" width="12" height="20" fill="#D95300"/>
+  <rect x="2" y="1" width="16" height="18" fill="#D95300"/>
+  <rect x="1" y="2" width="18" height="16" fill="#D95300"/>
+  <rect x="0" y="4" width="20" height="12" fill="#D95300"/>
+  <!-- Main Orange Body -->
+  <rect x="4" y="1" width="12" height="17" fill="#FF7300"/>
+  <rect x="2" y="2" width="16" height="15" fill="#FF7300"/>
+  <rect x="1" y="3" width="18" height="13" fill="#FF7300"/>
+  <!-- Highlight -->
+  <rect x="4" y="2" width="5" height="2" fill="#FFA547"/>
+  <rect x="2" y="4" width="2" height="5" fill="#FFA547"/>
+  <rect x="3" y="3" width="2" height="2" fill="#FFA547"/>
+  <!-- Letter E -->
+  <rect x="4" y="7" width="3" height="7" fill="#FFFFFF"/>
+  <rect x="5" y="6" width="5" height="2" fill="#FFFFFF"/>
+  <rect x="4" y="7" width="6" height="1" fill="#FFFFFF"/>
+  <rect x="4" y="9" width="5" height="2" fill="#FFFFFF"/>
+  <rect x="4" y="12" width="6" height="2" fill="#FFFFFF"/>
+  <!-- Letter F -->
+  <rect x="11" y="7" width="3" height="7" fill="#FFFFFF"/>
+  <rect x="12" y="6" width="5" height="2" fill="#FFFFFF"/>
+  <rect x="11" y="7" width="6" height="1" fill="#FFFFFF"/>
+  <rect x="11" y="9" width="5" height="2" fill="#FFFFFF"/>
+</svg>
+`;
+
+/**
  * Send email via Resend REST API (HTTPS port 443).
  * Never blocked on Render Free tier.
  */
@@ -375,26 +446,82 @@ export async function handleSubmissionNotifications({ form, response, answers })
           const subject = `New Response Received: ${form.title}`;
           const text = `Hello,\n\nA new response has been submitted to your form "${form.title}" on ${formattedDate}.\n\nView the response in your dashboard:\n${responsesUrl}\n\nNote: For respondent privacy and security, answer details are available exclusively in your authenticated dashboard.\n\n— Easy Forms`;
           const html = `
-            <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; color: #292524; background-color: #FFFDF9; border: 1px solid #E7E5E4; border-radius: 16px;">
-              <div style="margin-bottom: 20px;">
-                <span style="background-color: #FFEDD5; color: #EA580C; font-weight: 700; font-size: 13px; padding: 4px 10px; border-radius: 9999px; text-transform: uppercase; letter-spacing: 0.5px;">Easy Forms</span>
-              </div>
-              <h2 style="font-size: 20px; font-weight: 700; color: #292524; margin-top: 0; margin-bottom: 8px;">New Response Received</h2>
-              <p style="font-size: 14px; color: #78716C; margin-top: 0; line-height: 1.5;">A new submission has been recorded for your form <strong>"${form.title}"</strong>.</p>
-              
-              <div style="background-color: #FFFFFF; border: 1px solid #E7E5E4; border-radius: 12px; padding: 16px; margin: 20px 0;">
-                <p style="margin: 0 0 6px 0; font-size: 13px; color: #78716C;"><strong>Submission Time:</strong> ${formattedDate}</p>
-                <p style="margin: 0; font-size: 13px; color: #78716C;"><strong>Response ID:</strong> <code style="font-family: monospace; background: #F5F5F4; padding: 2px 6px; border-radius: 4px;">${responseId}</code></p>
-              </div>
+            <!DOCTYPE html>
+            <html>
+            <head>
+              <meta charset="utf-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <meta name="color-scheme" content="light dark">
+            </head>
+            <body style="margin: 0; padding: 24px 12px; background-color: #F5F5F4; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+              <div style="max-width: 580px; margin: 0 auto; background-color: #FFFFFF; border: 1px solid #E7E5E4; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 16px rgba(0,0,0,0.04);">
+                
+                <!-- Header Bar -->
+                <div style="background-color: #FFFDF9; border-bottom: 1px solid #F5F5F4; padding: 18px 24px;">
+                  <table style="width: 100%; border-collapse: collapse;">
+                    <tr>
+                      <td style="vertical-align: middle;">
+                        ${EMAIL_PIXEL_LOGO_SVG}
+                        <span style="font-size: 16px; font-weight: 800; color: #1C1917; vertical-align: middle; letter-spacing: -0.02em;">Easy Forms</span>
+                      </td>
+                      <td style="text-align: right; vertical-align: middle;">
+                        <span style="background-color: #FFEDD5; color: #C2410C; font-weight: 700; font-size: 11px; padding: 4px 10px; border-radius: 9999px; text-transform: uppercase; letter-spacing: 0.04em;">New Submission</span>
+                      </td>
+                    </tr>
+                  </table>
+                </div>
 
-              <div style="margin: 24px 0;">
-                <a href="${responsesUrl}" style="background-color: #F97316; color: #FFFFFF; text-decoration: none; font-size: 14px; font-weight: 600; padding: 12px 24px; border-radius: 10px; display: inline-block;">View Responses in Dashboard</a>
-              </div>
+                <!-- Main Content -->
+                <div style="padding: 28px 24px;">
+                  <h1 style="font-size: 22px; font-weight: 800; color: #1C1917; margin: 0 0 8px 0; letter-spacing: -0.02em; line-height: 1.3;">
+                    New Response Received
+                  </h1>
+                  <p style="font-size: 14px; color: #78716C; margin: 0 0 20px 0; line-height: 1.5;">
+                    A new response was just recorded for your form <strong style="color: #292524;">"${escapeHtml(form.title)}"</strong>.
+                  </p>
+                  
+                  <!-- Metadata Card -->
+                  <div style="background-color: #FFF7ED; border: 1px solid #FED7AA; border-radius: 12px; padding: 14px 18px; margin: 20px 0;">
+                    <table style="width: 100%; border-collapse: collapse;">
+                      <tr>
+                        <td style="font-size: 11px; color: #9A3412; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; padding-bottom: 4px;">
+                          Submission Time
+                        </td>
+                        <td style="font-size: 11px; color: #9A3412; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; text-align: right; padding-bottom: 4px;">
+                          Response Reference
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style="font-size: 13px; color: #431407; font-weight: 500;">
+                          ${formattedDate}
+                        </td>
+                        <td style="font-size: 13px; color: #EA580C; font-weight: 700; text-align: right; font-family: monospace;">
+                          #${responseId}
+                        </td>
+                      </tr>
+                    </table>
+                  </div>
 
-              <p style="font-size: 12px; color: #A8A29E; line-height: 1.4; margin-top: 24px; border-top: 1px solid #E7E5E4; padding-top: 16px;">
-                To protect respondent privacy, answer details are kept secure and accessible only when signed in.
-              </p>
-            </div>
+                  <!-- CTA Button -->
+                  <div style="margin: 28px 0 20px 0; text-align: center;">
+                    <a href="${responsesUrl}" style="background-color: #EA580C; color: #FFFFFF; text-decoration: none; font-size: 14px; font-weight: 700; padding: 13px 28px; border-radius: 10px; display: inline-block; box-shadow: 0 2px 6px rgba(234, 88, 12, 0.25);">
+                      View Responses in Dashboard &rarr;
+                    </a>
+                  </div>
+
+                  <!-- Privacy Note -->
+                  <p style="font-size: 12px; color: #A8A29E; line-height: 1.5; margin: 24px 0 0 0; border-top: 1px solid #F5F5F4; padding-top: 16px; text-align: center;">
+                    To protect respondent privacy, answer details are stored securely and accessible only when signed in.
+                  </p>
+                </div>
+
+                <!-- Footer -->
+                <div style="background-color: #FAFAF9; border-top: 1px solid #F5F5F4; padding: 14px 24px; text-align: center;">
+                  <span style="font-size: 11px; color: #A8A29E;">Easy Forms Notification Service</span>
+                </div>
+              </div>
+            </body>
+            </html>
           `;
 
           await sendEmailWithRetry({
@@ -438,24 +565,123 @@ export async function handleSubmissionNotifications({ form, response, answers })
 
         if (recipientEmail && isValidEmail(recipientEmail)) {
           const subject = `Submission Receipt: ${form.title}`;
-          const text = `Hello,\n\nThank you for completing "${form.title}".\n\nYour response was successfully recorded on ${formattedDate}.\n\nReceipt ID: ${responseId}\n\n— Easy Forms`;
-          const html = `
-            <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; color: #292524; background-color: #FFFDF9; border: 1px solid #E7E5E4; border-radius: 16px;">
-              <div style="margin-bottom: 20px;">
-                <span style="background-color: #FFEDD5; color: #EA580C; font-weight: 700; font-size: 13px; padding: 4px 10px; border-radius: 9999px; text-transform: uppercase; letter-spacing: 0.5px;">Easy Forms</span>
-              </div>
-              <h2 style="font-size: 20px; font-weight: 700; color: #292524; margin-top: 0; margin-bottom: 8px;">Submission Confirmation</h2>
-              <p style="font-size: 14px; color: #78716C; margin-top: 0; line-height: 1.5;">Thank you! Your response to <strong>"${form.title}"</strong> has been recorded.</p>
-              
-              <div style="background-color: #FFFFFF; border: 1px solid #E7E5E4; border-radius: 12px; padding: 16px; margin: 20px 0;">
-                <p style="margin: 0 0 6px 0; font-size: 13px; color: #78716C;"><strong>Submitted:</strong> ${formattedDate}</p>
-                <p style="margin: 0; font-size: 13px; color: #78716C;"><strong>Receipt Reference:</strong> <code style="font-family: monospace; background: #F5F5F4; padding: 2px 6px; border-radius: 4px;">${responseId}</code></p>
-              </div>
 
-              <p style="font-size: 12px; color: #A8A29E; line-height: 1.4; margin-top: 24px; border-top: 1px solid #E7E5E4; padding-top: 16px;">
-                This email serves as your official submission receipt from Easy Forms.
-              </p>
-            </div>
+          // Format submitted answers for the receipt
+          const fields = Array.isArray(form.fields)
+            ? [...form.fields].sort((a, b) => (a.order || 0) - (b.order || 0))
+            : [];
+
+          const answerRows = [];
+          const textSummaryLines = [];
+
+          for (const field of fields) {
+            const ans = (answers || []).find((a) => a.fieldId === field.id);
+            const rawVal = ans ? ans.value : null;
+            const formattedVal = formatAnswerValue(rawVal);
+            const escapedLabel = escapeHtml(field.label || 'Question');
+            const escapedVal = escapeHtml(formattedVal);
+
+            answerRows.push(`
+              <div style="background-color: #FAFAF9; border: 1px solid #F5F5F4; border-radius: 10px; padding: 12px 16px; margin-bottom: 10px;">
+                <div style="font-size: 11px; font-weight: 700; color: #78716C; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">
+                  ${escapedLabel}
+                </div>
+                <div style="font-size: 14px; font-weight: 600; color: #1C1917; word-break: break-word; line-height: 1.5;">
+                  ${escapedVal}
+                </div>
+              </div>
+            `);
+
+            textSummaryLines.push(`• ${field.label || 'Question'}: ${formattedVal}`);
+          }
+
+          const text = `Hello,\n\nThank you for completing "${form.title}".\n\nYour response was successfully recorded on ${formattedDate}.\n\nReceipt Reference: ${responseId}\n\nSummary of Your Submission:\n---------------------------\n${textSummaryLines.join('\n')}\n\nThis email serves as your official submission receipt.\n\n— Easy Forms`;
+          const html = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+              <meta charset="utf-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <meta name="color-scheme" content="light dark">
+            </head>
+            <body style="margin: 0; padding: 24px 12px; background-color: #F5F5F4; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+              <div style="max-width: 580px; margin: 0 auto; background-color: #FFFFFF; border: 1px solid #E7E5E4; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 16px rgba(0,0,0,0.04);">
+                
+                <!-- Header Bar -->
+                <div style="background-color: #FFFDF9; border-bottom: 1px solid #F5F5F4; padding: 18px 24px;">
+                  <table style="width: 100%; border-collapse: collapse;">
+                    <tr>
+                      <td style="vertical-align: middle;">
+                        ${EMAIL_PIXEL_LOGO_SVG}
+                        <span style="font-size: 16px; font-weight: 800; color: #1C1917; vertical-align: middle; letter-spacing: -0.02em;">Easy Forms</span>
+                      </td>
+                      <td style="text-align: right; vertical-align: middle;">
+                        <span style="background-color: #ECFDF5; color: #047857; font-weight: 700; font-size: 11px; padding: 4px 10px; border-radius: 9999px; text-transform: uppercase; letter-spacing: 0.04em;">Confirmed &#10003;</span>
+                      </td>
+                    </tr>
+                  </table>
+                </div>
+
+                <!-- Main Content -->
+                <div style="padding: 28px 24px;">
+                  <h1 style="font-size: 22px; font-weight: 800; color: #1C1917; margin: 0 0 8px 0; letter-spacing: -0.02em; line-height: 1.3;">
+                    Submission Confirmed
+                  </h1>
+                  <p style="font-size: 14px; color: #78716C; margin: 0 0 20px 0; line-height: 1.5;">
+                    Thank you! Your response to <strong style="color: #292524;">"${escapeHtml(form.title)}"</strong> has been recorded. Here is a copy of your submission for your records.
+                  </p>
+                  
+                  <!-- Metadata Card -->
+                  <div style="background-color: #FFF7ED; border: 1px solid #FED7AA; border-radius: 12px; padding: 14px 18px; margin: 20px 0;">
+                    <table style="width: 100%; border-collapse: collapse;">
+                      <tr>
+                        <td style="font-size: 11px; color: #9A3412; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; padding-bottom: 4px;">
+                          Submitted Date
+                        </td>
+                        <td style="font-size: 11px; color: #9A3412; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; text-align: right; padding-bottom: 4px;">
+                          Receipt Reference
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style="font-size: 13px; color: #431407; font-weight: 500;">
+                          ${formattedDate}
+                        </td>
+                        <td style="font-size: 13px; color: #EA580C; font-weight: 700; text-align: right; font-family: monospace;">
+                          #${responseId}
+                        </td>
+                      </tr>
+                    </table>
+                  </div>
+
+                  <!-- Summary of Answers -->
+                  <div style="margin: 24px 0 16px 0;">
+                    <div style="margin-bottom: 12px;">
+                      <span style="font-size: 12px; font-weight: 700; color: #292524; text-transform: uppercase; letter-spacing: 0.05em;">
+                        Summary of Your Submission
+                      </span>
+                    </div>
+                    <div>
+                      ${
+                        answerRows.length > 0
+                          ? answerRows.join('')
+                          : '<div style="font-size: 13px; color: #78716C; padding: 12px; background: #FAFAF9; border-radius: 8px;">No question details available.</div>'
+                      }
+                    </div>
+                  </div>
+
+                  <!-- Footer note -->
+                  <p style="font-size: 12px; color: #A8A29E; line-height: 1.5; margin: 24px 0 0 0; border-top: 1px solid #F5F5F4; padding-top: 16px; text-align: center;">
+                    This email serves as your official submission receipt from Easy Forms.
+                  </p>
+                </div>
+
+                <!-- Footer Bar -->
+                <div style="background-color: #FAFAF9; border-top: 1px solid #F5F5F4; padding: 14px 24px; text-align: center;">
+                  <span style="font-size: 11px; color: #A8A29E;">Powered by Easy Forms &bull; Fast, elegant forms</span>
+                </div>
+              </div>
+            </body>
+            </html>
           `;
 
           await sendEmailWithRetry({

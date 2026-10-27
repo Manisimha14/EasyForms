@@ -283,22 +283,94 @@ export async function sendTestEmail(userId) {
   const subject = 'Easy Forms: Notification Service Verification';
   const text = `Hello ${user.name || 'there'},\n\nThis is a verification email confirming that email notifications for your Easy Forms account are working properly.\n\nRecipient: ${user.email}\nDate: ${new Date().toUTCString()}\n\n— Easy Forms Team`;
   const html = `
-    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; color: #292524; background-color: #FFFDF9; border: 1px solid #E7E5E4; border-radius: 16px;">
-      <div style="margin-bottom: 20px;">
-        <span style="background-color: #FFEDD5; color: #EA580C; font-weight: 700; font-size: 13px; padding: 4px 10px; border-radius: 9999px; text-transform: uppercase; letter-spacing: 0.5px;">Easy Forms</span>
-      </div>
-      <h2 style="font-size: 20px; font-weight: 700; color: #292524; margin-top: 0; margin-bottom: 8px;">Email Notifications Working! 🎉</h2>
-      <p style="font-size: 14px; color: #78716C; margin-top: 0; line-height: 1.5;">This confirms that email notifications and respondent receipts for your forms are configured and ready.</p>
-      
-      <div style="background-color: #FFFFFF; border: 1px solid #E7E5E4; border-radius: 12px; padding: 16px; margin: 20px 0;">
-        <p style="margin: 0 0 6px 0; font-size: 13px; color: #78716C;"><strong>Recipient:</strong> ${user.email}</p>
-        <p style="margin: 0; font-size: 13px; color: #78716C;"><strong>Verified At:</strong> ${new Date().toUTCString()}</p>
-      </div>
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="color-scheme" content="light dark">
+    </head>
+    <body style="margin: 0; padding: 24px 12px; background-color: #F5F5F4; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+      <div style="max-width: 580px; margin: 0 auto; background-color: #FFFFFF; border: 1px solid #E7E5E4; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 16px rgba(0,0,0,0.04);">
+        
+        <!-- Header Bar -->
+        <div style="background-color: #FFFDF9; border-bottom: 1px solid #F5F5F4; padding: 18px 24px;">
+          <table style="width: 100%; border-collapse: collapse;">
+            <tr>
+              <td style="vertical-align: middle;">
+                <svg width="34" height="34" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" style="image-rendering: pixelated; shape-rendering: crispEdges; display: inline-block; vertical-align: middle; border-radius: 6px; margin-right: 8px;">
+                  <rect x="4" y="0" width="12" height="20" fill="#D95300"/>
+                  <rect x="2" y="1" width="16" height="18" fill="#D95300"/>
+                  <rect x="1" y="2" width="18" height="16" fill="#D95300"/>
+                  <rect x="0" y="4" width="20" height="12" fill="#D95300"/>
+                  <rect x="4" y="1" width="12" height="17" fill="#FF7300"/>
+                  <rect x="2" y="2" width="16" height="15" fill="#FF7300"/>
+                  <rect x="1" y="3" width="18" height="13" fill="#FF7300"/>
+                  <rect x="4" y="2" width="5" height="2" fill="#FFA547"/>
+                  <rect x="2" y="4" width="2" height="5" fill="#FFA547"/>
+                  <rect x="3" y="3" width="2" height="2" fill="#FFA547"/>
+                  <rect x="4" y="7" width="3" height="7" fill="#FFFFFF"/>
+                  <rect x="5" y="6" width="5" height="2" fill="#FFFFFF"/>
+                  <rect x="4" y="7" width="6" height="1" fill="#FFFFFF"/>
+                  <rect x="4" y="9" width="5" height="2" fill="#FFFFFF"/>
+                  <rect x="4" y="12" width="6" height="2" fill="#FFFFFF"/>
+                  <rect x="11" y="7" width="3" height="7" fill="#FFFFFF"/>
+                  <rect x="12" y="6" width="5" height="2" fill="#FFFFFF"/>
+                  <rect x="11" y="7" width="6" height="1" fill="#FFFFFF"/>
+                  <rect x="11" y="9" width="5" height="2" fill="#FFFFFF"/>
+                </svg>
+                <span style="font-size: 16px; font-weight: 800; color: #1C1917; vertical-align: middle; letter-spacing: -0.02em;">Easy Forms</span>
+              </td>
+              <td style="text-align: right; vertical-align: middle;">
+                <span style="background-color: #ECFDF5; color: #047857; font-weight: 700; font-size: 11px; padding: 4px 10px; border-radius: 9999px; text-transform: uppercase; letter-spacing: 0.04em;">Active &#10003;</span>
+              </td>
+            </tr>
+          </table>
+        </div>
 
-      <p style="font-size: 12px; color: #16A34A; font-weight: 600; line-height: 1.4; margin-top: 24px; border-top: 1px solid #E7E5E4; padding-top: 16px;">
-        ✓ Your email notifications are configured and operational.
-      </p>
-    </div>
+        <!-- Main Content -->
+        <div style="padding: 28px 24px;">
+          <h1 style="font-size: 22px; font-weight: 800; color: #1C1917; margin: 0 0 8px 0; letter-spacing: -0.02em; line-height: 1.3;">
+            Email Notifications Working! 🎉
+          </h1>
+          <p style="font-size: 14px; color: #78716C; margin: 0 0 20px 0; line-height: 1.5;">
+            This verification email confirms that transactional email notifications and respondent receipts for your Easy Forms account are configured and ready.
+          </p>
+          
+          <!-- Metadata Card -->
+          <div style="background-color: #FFF7ED; border: 1px solid #FED7AA; border-radius: 12px; padding: 14px 18px; margin: 20px 0;">
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td style="font-size: 11px; color: #9A3412; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; padding-bottom: 4px;">
+                  Recipient Account
+                </td>
+                <td style="font-size: 11px; color: #9A3412; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; text-align: right; padding-bottom: 4px;">
+                  Verified At
+                </td>
+              </tr>
+              <tr>
+                <td style="font-size: 13px; color: #431407; font-weight: 500;">
+                  ${user.email}
+                </td>
+                <td style="font-size: 13px; color: #EA580C; font-weight: 700; text-align: right;">
+                  ${new Date().toUTCString()}
+                </td>
+              </tr>
+            </table>
+          </div>
+
+          <p style="font-size: 13px; color: #059669; font-weight: 600; line-height: 1.5; margin: 24px 0 0 0; border-top: 1px solid #F5F5F4; padding-top: 16px; text-align: center;">
+            &#10003; Your email notifications are configured and operational.
+          </p>
+        </div>
+
+        <!-- Footer Bar -->
+        <div style="background-color: #FAFAF9; border-top: 1px solid #F5F5F4; padding: 14px 24px; text-align: center;">
+          <span style="font-size: 11px; color: #A8A29E;">Powered by Easy Forms &bull; Fast, elegant forms</span>
+        </div>
+      </div>
+    </body>
+    </html>
   `;
 
   const job = await sendEmailWithRetry({
