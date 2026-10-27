@@ -75,7 +75,7 @@ Creating, distributing, and analyzing custom web forms usually requires navigati
 ### 🔔 Transactional Email Notifications
 - **Respondent Confirmation**: Instant email submission receipt sent to respondents with submitted answers.
 - **Owner Notification**: Instant email alert to the form owner upon every new submission.
-- **Google SMTP & Mock Modes**: Reliable delivery via SMTP with automatic mock logging fallback for local testing.
+- **Brevo**: Reliable delivery via Brevo with automatic mock logging fallback for local testing.
 
 ---
 
