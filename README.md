@@ -244,12 +244,16 @@ Below is the complete configuration matrix for running Easy Forms. Default fallb
 | `REFRESH_TOKEN_TTL_DAYS` | No | `7` | Refresh token lifespan before mandatory re-login (in days) |
 | `BCRYPT_COST` | No | `12` | Salt work factor for bcrypt password hashing |
 | `CORS_ORIGINS` | No | `http://localhost:5173` | Allowed frontend origins (comma-separated for multiple URLs) |
-| `EMAIL_MODE` | No | `mock` | Delivery mode: `smtp` for live email dispatch, `mock` for local console logging |
+| `EMAIL_MODE` | No | `mock` | Delivery mode: `smtp` for live email dispatch, `mock` for local console logging, or `api` for HTTPS REST |
+| `EMAIL_PROVIDER` | No | `gmail` | Email provider (`gmail`, `resend`, `brevo`) |
 | `SMTP_HOST` | No | `smtp.gmail.com` | SMTP host server (used when `EMAIL_MODE=smtp`) |
-| `SMTP_PORT` | No | `465` | SMTP port (`465` for SSL/TLS, `587` for STARTTLS) |
+| `SMTP_PORT` | No | `587` | SMTP port (`465` for SSL/TLS, `587` for STARTTLS) |
+| `SMTP_SECURE` | No | `false` | Direct TLS/SSL connection boolean (`true` for port 465, `false` for 587) |
 | `SMTP_USER` | No | — | Sender email account username |
 | `SMTP_APP_PASSWORD` | No | — | Secure 16-character SMTP application password |
 | `EMAIL_FROM` | No | `Easy Forms <noreply@easyforms.local>` | Formatted sender name and email in message headers |
+| `RESEND_API_KEY` | No | — | Resend API key for HTTPS email delivery (bypasses Render Free Tier SMTP port blocking) |
+| `BREVO_API_KEY` | No | — | Brevo API key for HTTPS email delivery alternative |
 | `GROQ_API_KEY` | No | — | Groq API Key for accelerated Formly AI generation and response chat |
 | `GEMINI_API_KEY` | No | — | Google Gemini API Key |
 
@@ -277,6 +281,7 @@ Below is the complete configuration matrix for running Easy Forms. Default fallb
 2. Set the build command to `npm install`.
 3. Set the start command to `node src/server.js`.
 4. Supply your production environment variables (`MONGODB_URI`, `JWT_ACCESS_SECRET`, `CORS_ORIGINS`, `GROQ_API_KEY`, etc.) in the host's dashboard.
+   > **Note on Render Free Tier Outbound Email**: Render's free tier restricts outbound traffic on SMTP ports (25, 465, and 587). Add a free `RESEND_API_KEY` (from [resend.com](https://resend.com)) or `BREVO_API_KEY` (from [brevo.com](https://brevo.com)) to your environment variables. Easy Forms will automatically deliver transactional emails via HTTPS (port 443) without any port blocking.
 5. Configure health check endpoints:
    - Liveness Probe: `GET /api/v1/health`
    - Readiness Probe: `GET /api/v1/health/ready`
